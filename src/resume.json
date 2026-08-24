@@ -1,0 +1,102 @@
+{
+  "name": "Zet Donaue Samson",
+  "location": "Pasig City, Philippines",
+  "email": "zetsamson@gmail.com",
+  "phone": "+63 998 280 6036",
+  "linkedin": "linkedin.com/in/zet02",
+  "github": "github.com/Fauxx",
+  "summary": "Computer Engineering Technology graduate (TUP Manila) specializing in Cloud-Native Infrastructure, Container Orchestration, and GitOps CI/CD pipelines. Hands-on experience provisioning multi-environment Kubernetes (K8s) clusters using Infrastructure as Code (IaC) with Terraform and automating continuous deployment via GitHub Actions and ArgoCD. Proficient in Linux system administration (Fedora/Ubuntu), site reliability engineering (SRE) principles, and full-stack observability stacks (Prometheus, Grafana, Loki).",
+  "skills": [
+    {
+      "category": "Cloud Infrastructure & IaC",
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+    },
+    {
+      "category": "Container Orchestration & Linux",
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+    },
+    {
+      "category": "CI/CD & GitOps",
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+    },
+    {
+      "category": "Observability & Monitoring",
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+    },
+    {
+      "category": "Networking & Security",
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+    },
+    {
+      "category": "Databases & Messaging",
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+    }
+  ],
+  "projects": [
+    {
+      "title": "IoT-Based Fire Monitoring & Cloud-Native Analytics Platform",
+      "date": "Aug 2025 \u2013 June 2026",
+      "role": "Project Leader, Lead Developer & Cloud Infrastructure Engineer",
+      "bullets": [
+        "Enforced Zero-Trust security posture by authoring default-deny Kubernetes NetworkPolicies isolating all pod-to-pod traffic across 17+ microservice manifests",
+        "Architected reverse-proxy authentication gating using Nginx auth_request directives to verify user sessions against the backend API before granting access to protected dashboards and resources",
+        "Configured real-time observability dashboards (Grafana, Prometheus, Loki) for security monitoring, system health alerting, and incident tracking across the entire platform",
+        "Automated security operations through a 4-stage GitHub Actions CI/CD pipeline with change-detection matrix parallelism and ArgoCD GitOps for auditable, declarative infrastructure reconciliation",
+        "Implemented encrypted database transit, PostgreSQL-backed session persistence, and comprehensive security headers (X-Frame-Options, XSS-Protection, strict Referrer-Policy) to harden the application layer",
+        "Provisioned cloud infrastructure (DigitalOcean Kubernetes, VPC, S3 state backend) via multi-layer Terraform IaC with environment-isolated state management to prevent unauthorized configuration drift",
+        "Designed a Python ETL automation pipeline (pandas) performing time-series data aggregation, anomaly debouncing, and compliance-ready incident lifecycle logging into PostgreSQL"
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "company": "InfoTouch Corporation",
+      "location": "Makati, Metro Manila, Philippines",
+      "role": "Software Developer \u2013 Intern",
+      "date": "Feb 2026 \u2013 June 2026",
+      "bullets": [
+        "Refactored legacy backend web applications into high-performance C# Minimal APIs, tracing cross-stack API execution flows to maintain service availability.",
+        "Managed Git version control workflows, executing branch management, code merges, pull requests, and peer code reviews in an agile development environment.",
+        "Optimized database queries and route handlers using asynchronous programming (async/await) to reduce API latency.",
+        "Authored comprehensive unit test suites and documented modernized Minimal API endpoints to ensure long-term codebase maintainability."
+      ]
+    },
+    {
+      "company": "Concentrix",
+      "location": "Mandaluyong, Metro Manila, Philippines",
+      "role": "Adviser I, Sales",
+      "date": "July 2024 \u2013 Nov 2024",
+      "bullets": [
+        "Provided cross-functional technical troubleshooting, account management, and network service resolution for telecommunications subscribers.",
+        "Utilized multiple internal CRM systems and technical documentation databases simultaneously to diagnose and resolve complex customer issues under strict SLAs."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "school": "Technological University of the Philippines (TUP)",
+      "location": "Manila, Philippines",
+      "degree": "Bachelor of Engineering Technology major in Computer Engineering Technology",
+      "date": "Graduation: Aug 2026"
+    }
+  ],
+  "master_profile": {
+    "summary_context": "Computer Engineering Technology graduate with solid grounding in DevOps, GitOps, observability, zero-trust network setups, and microservices. Professional focus on building high-reliability, containerized cloud infrastructure using Terraform, Kubernetes (DOKS), Helm, and automated CI/CD pipelines (GitHub Actions, ArgoCD). Strong C# backend experience writing Minimal APIs, optimizing queries, and handling unit test suites.",
+    "projects": [
+      {
+        "title": "IoT-Based Fire Monitoring & Cloud-Native Analytics Platform",
+        "detailed_context": "This project was a cloud-native platform integrating IoT fire sensors with real-time analytics. Infrastructure was provisioned on DigitalOcean Kubernetes Service (DOKS) using Terraform. Key technologies used: Docker, Kustomize, ArgoCD (GitOps reconciliation), GitHub Actions for matrix container builds, Prometheus/Grafana/Loki for full observability, PostgreSQL, Mosquitto MQTT broker, InfluxDB, Flyway migration hook scripts, and microservice traffic isolation via Kubernetes NetworkPolicies."
+      }
+    ],
+    "experience": [
+      {
+        "company": "InfoTouch Corporation",
+        "detailed_context": "Refactored legacy web endpoints into high-performance C# Minimal APIs (asynchronous async/await patterns), optimized Postgres query response latencies, handled git branch merges/pull requests in an agile environment, and authored robust xUnit suites."
+      },
+      {
+        "company": "Concentrix",
+        "detailed_context": "Handled telecommunications account troubleshooting, verified client network routes, resolved technical billing queries, and operated multiple internal databases under strict SLA deadlines."
+      }
+    ]
+  }
+}

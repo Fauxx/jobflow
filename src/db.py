@@ -14,8 +14,10 @@ def init_db():
         title TEXT NOT NULL,
         company TEXT NOT NULL,
         location TEXT,
+        description TEXT,
         description_url TEXT,
         contact_email TEXT,
+        salary TEXT,
         source TEXT,
         discovered_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         status TEXT DEFAULT 'NEW' CHECK(status IN ('NEW', 'SKIPPED', 'APPROVED', 'APPLIED', 'REJECTED', 'INTERVIEWING'))
@@ -36,6 +38,12 @@ def init_db():
     )
     """)
     
+    # Run migration to add posted_time if not exists
+    try:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN posted_time TEXT")
+    except sqlite3.OperationalError:
+        pass # Already exists
+        
     conn.commit()
     conn.close()
     print(f"Database initialized at: {DB_PATH}")

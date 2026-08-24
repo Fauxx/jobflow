@@ -1,0 +1,10 @@
+jobflow.db
+playwright_profile/
+.env
+.idea/
+**/__pycache__/
+*.pyc
+*.pyo
+venv/
+node_modules/
+.gemini/
