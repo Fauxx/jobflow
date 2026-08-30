@@ -1,32 +1,51 @@
 import json
-from src.services.job_analysis import call_gemini
+from google import genai
+from google.genai import types
 
-class ResumePersonalizationService:
-    @staticmethod
-    def generate_tailored_application(context: dict, candidate_name: str) -> dict:
-        if not context.get("job_description"):
-            return {}
-            
-        prompt = f'''
-        You are an expert career agent helping {candidate_name} apply for a job.
-        Job Title: {context.get("job_title")}
-        Company: {context.get("company")}
-        Description: {context.get("job_description")}
-        
-        Candidate Context:
-        {json.dumps(context.get("candidate_context", {}), indent=2)}
-        
-        Format output as JSON:
-        1. "subject"
-        2. "body" (cover letter)
-        3. "key_matches"
-        '''
-        
-        try:
-            resp = call_gemini(prompt)
-            # clean json blocks
-            if resp.startswith("```json"):
-                resp = resp.split("```json", 1)[1].rsplit("```", 1)[0].strip()
-            return json.loads(resp)
-        except Exception:
-            return {}
+def generate_tailored_application(candidate_context_md: str, jd_requirements: dict, job_title: str, company_name: str) -> dict:
+    client = genai.Client()
+    
+    system_instruction = (
+        "You are a Fact-Anchored Career Writing Engine. You ONLY use information present in the Candidate Knowledge Base. "
+        "Never invent tools, metrics, or dates. Ensure all statements are strictly backed by the candidate's provided context."
+    )
+    
+    schema = {
+        "type": "OBJECT",
+        "properties": {
+            "email_subject": {"type": "STRING"},
+            "hook": {"type": "STRING"},
+            "evidence_bullets": {"type": "ARRAY", "items": {"type": "STRING"}},
+            "closing": {"type": "STRING"},
+            "matched_skills": {"type": "ARRAY", "items": {"type": "STRING"}},
+            "missing_skills": {"type": "ARRAY", "items": {"type": "STRING"}}
+        },
+        "required": ["email_subject", "hook", "evidence_bullets", "closing", "matched_skills", "missing_skills"]
+    }
+    
+    prompt = f"""
+Job Title: {job_title}
+Company: {company_name}
+
+Job Requirements:
+{json.dumps(jd_requirements, indent=2)}
+
+Candidate Knowledge Base:
+{candidate_context_md}
+
+Write a tailored application email. 
+It must contain a 3-section email output: Hook, Evidence (mapping JD to candidate), Close.
+Provide it in the requested JSON structure.
+"""
+    
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            response_mime_type="application/json",
+            response_schema=schema
+        )
+    )
+    
+    return json.loads(response.text)

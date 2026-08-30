@@ -4,8 +4,6 @@ from sqlalchemy.orm import Session
 from src.core.database import get_db
 from src.models.job import Job
 from src.models.application import Application
-from src.services.context_builder import ContextBuilder
-from src.services.resume_personalization import ResumePersonalizationService
 from pydantic import BaseModel
 from typing import Optional
 import datetime
@@ -67,22 +65,3 @@ async def update_status(job_id: int, request: Request, status: str = Form(...), 
     db.commit()
     return RedirectResponse(url="/", status_code=303)
 
-@router.get("/{job_id}/tailor")
-async def tailor_job(job_id: int, db: Session = Depends(get_db)):
-    job = db.query(Job).filter(Job.id == job_id).first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-        
-    user = get_current_user(db)
-    context = ContextBuilder.build_personalization_context(db, job, user.id)
-    result = ResumePersonalizationService.generate_tailored_application(context, "Candidate")
-    
-    return {
-        "body": result.get("body", "Failed to generate cover letter."),
-        "screening_answers": result.get("screening_answers", {}),
-        "key_matches": result.get("key_matches", [])
-    }
-
-@router.get("/{job_id}/tailor_resume")
-async def tailor_resume(job_id: int, db: Session = Depends(get_db)):
-    return []

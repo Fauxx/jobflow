@@ -9,27 +9,27 @@
   "skills": [
     {
       "category": "Cloud Infrastructure & IaC",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
     },
     {
       "category": "Container Orchestration & Linux",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
     },
     {
       "category": "CI/CD & GitOps",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
     },
     {
       "category": "Observability & Monitoring",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
     },
     {
       "category": "Networking & Security",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
     },
     {
       "category": "Databases & Messaging",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC).DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)."
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
     }
   ],
   "projects": [

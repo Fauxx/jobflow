@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ profile.name or 'Resume' }}</title>
+    <style>
+        /* ATS-Safe Resume — Single column, no graphics, standard fonts */
+        @page { size: letter; margin: 1.25cm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', 'Helvetica', sans-serif; font-size: 10pt; line-height: 1.4; color: #000; }
+        
+        .header { text-align: center; margin-bottom: 12pt; }
+        .header h1 { font-size: 16pt; font-weight: bold; margin-bottom: 4pt; }
+        .header .contact { font-size: 9pt; color: #333; }
+        
+        .section { margin-bottom: 10pt; }
+        .section-title {
+            font-size: 11pt; font-weight: bold; text-transform: uppercase;
+            border-bottom: 1pt solid #000; padding-bottom: 2pt; margin-bottom: 6pt;
+        }
+        
+        .summary { font-size: 10pt; margin-bottom: 8pt; }
+        
+        .skills-line { font-size: 10pt; margin-bottom: 2pt; }
+        .skills-line strong { font-weight: bold; }
+        
+        .exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2pt; }
+        .exp-title { font-weight: bold; font-size: 10pt; }
+        .exp-date { font-size: 9pt; color: #333; }
+        .exp-company { font-size: 10pt; margin-bottom: 4pt; }
+        
+        ul { margin-left: 18pt; margin-bottom: 8pt; }
+        li { font-size: 10pt; margin-bottom: 2pt; }
+        
+        @media print {
+            body { -webkit-print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header">
+        <h1>{{ profile.name or 'Candidate' }}</h1>
+        <p class="contact">
+            {% if profile %}
+                {{ profile.location or '' }}
+                {% if profile.phone %} · {{ profile.phone }}{% endif %}
+                {% if profile.linkedin_url %} · {{ profile.linkedin_url }}{% endif %}
+                {% if profile.github_url %} · {{ profile.github_url }}{% endif %}
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- PROFESSIONAL SUMMARY -->
+    {% if resume.summary %}
+    <div class="section">
+        <div class="section-title">Professional Summary</div>
+        <p class="summary">{{ resume.summary }}</p>
+    </div>
+    {% endif %}
+
+    <!-- TECHNICAL SKILLS -->
+    {% if resume.skills %}
+    <div class="section">
+        <div class="section-title">Technical Skills</div>
+        {% for cat in resume.skills %}
+        <p class="skills-line"><strong>{{ cat.category }}:</strong> {{ cat.skills | join(', ') }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- PROFESSIONAL EXPERIENCE -->
+    {% if resume.experiences %}
+    <div class="section">
+        <div class="section-title">Professional Experience</div>
+        {% for exp in resume.experiences %}
+        <div style="margin-bottom: 8pt;">
+            <div class="exp-header">
+                <span class="exp-title">{{ exp.title }} — {{ exp.company }}</span>
+                <span class="exp-date">{{ exp.date_range }}</span>
+            </div>
+            <div class="exp-company">{{ exp.location }}</div>
+            <ul>
+                {% for bullet in exp.bullets %}
+                <li>{{ bullet.tailored_text if bullet.tailored_text else bullet.original_text }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- PROJECTS -->
+    {% if resume.projects %}
+    <div class="section">
+        <div class="section-title">Projects</div>
+        {% for proj in resume.projects %}
+        <div style="margin-bottom: 8pt;">
+            <div class="exp-header">
+                <span class="exp-title">{{ proj.name }}</span>
+                <span class="exp-date">{{ proj.date_range }}</span>
+            </div>
+            {% if proj.role %}<div class="exp-company">{{ proj.role }}{% if proj.tech_stack %} | {{ proj.tech_stack }}{% endif %}</div>{% endif %}
+            <ul>
+                {% for bullet in proj.bullets %}
+                <li>{{ bullet.tailored_text if bullet.tailored_text else bullet.original_text }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- EDUCATION -->
+    {% if profile and profile.education %}
+    <div class="section">
+        <div class="section-title">Education</div>
+        {% for edu in profile.education %}
+        <div style="margin-bottom: 4pt;">
+            <div class="exp-header">
+                <span class="exp-title">{{ edu.degree }}</span>
+                <span class="exp-date">{{ edu.date_str or '' }}</span>
+            </div>
+            <div class="exp-company">{{ edu.institution }}{% if edu.location %}, {{ edu.location }}{% endif %}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- CERTIFICATIONS -->
+    {% if resume.certifications %}
+    <div class="section">
+        <div class="section-title">Certifications</div>
+        <ul>
+            {% for cert in resume.certifications %}
+            <li>{{ cert }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</body>
+</html>

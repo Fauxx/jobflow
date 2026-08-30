@@ -1,26 +1,33 @@
 import json
-import requests
-from src.core.config import settings
+from google import genai
+from google.genai import types
 
-def call_gemini(prompt: str) -> str:
-    if not settings.OPENAI_API_KEY: # Using as generic AI key for now, could rename to GEMINI_API_KEY
-        return "{}"
-        
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={settings.OPENAI_API_KEY}"
-    headers = {"Content-Type": "application/json"}
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"responseMimeType": "application/json"}
+def extract_jd_requirements(jd_text: str) -> dict:
+    client = genai.Client()
+    system_instruction = (
+        "You are a senior technical recruiter analyzing a job description. "
+        "Extract the hard skills, responsibilities, domain, and seniority from the text."
+    )
+    
+    schema = {
+        "type": "OBJECT",
+        "properties": {
+            "hard_skills": {"type": "ARRAY", "items": {"type": "STRING"}},
+            "responsibilities": {"type": "ARRAY", "items": {"type": "STRING"}},
+            "domain": {"type": "STRING"},
+            "seniority": {"type": "STRING"}
+        },
+        "required": ["hard_skills", "responsibilities", "domain", "seniority"]
     }
     
-    response = requests.post(url, headers=headers, json=payload, timeout=35)
-    if response.status_code == 200:
-        data = response.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
-    return "{}"
-
-class JobAnalysisService:
-    @staticmethod
-    def extract_required_skills(job_description: str) -> list:
-        # Dummy implementation
-        return []
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=jd_text,
+        config=types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            response_mime_type="application/json",
+            response_schema=schema
+        )
+    )
+    
+    return json.loads(response.text)

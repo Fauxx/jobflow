@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jobflow — Tailor Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gray: { 750: '#2d3748', 850: '#1a202c', 900: '#111827', 950: '#0b0f19' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #111827; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+        <div class="flex items-center space-x-4">
+            <a href="/" class="text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight leading-tight">{{ job.title }}</h1>
+                <p class="text-xs text-gray-400 font-semibold">{{ job.company }} · {{ job.location }} · Posted {{ job.date_posted.strftime('%b %d') if job.date_posted else 'Unknown' }}</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="/resume/download/pdf" target="_blank" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-xl text-sm transition flex items-center space-x-2 border border-gray-700">
+                <i class="fa-solid fa-file-pdf text-red-400"></i><span>PDF</span>
+            </a>
+            <a href="/resume/download/docx" target="_blank" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-xl text-sm transition flex items-center space-x-2 border border-gray-700">
+                <i class="fa-solid fa-file-word text-blue-400"></i><span>DOCX</span>
+            </a>
+            <button onclick="markApplied({{ job.id }})" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition flex items-center space-x-2 ml-2 shadow-lg shadow-blue-900/20">
+                <i class="fa-solid fa-check-double"></i><span>Mark as Applied</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-76px)]">
+        
+        <!-- Left Column: JD & Match -->
+        <div class="flex flex-col space-y-4 h-full overflow-hidden">
+            <!-- Skills Match Panel -->
+            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg flex-shrink-0">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest"><i class="fa-solid fa-bullseye text-blue-500 mr-2"></i> Skills Alignment</h2>
+                    <button onclick="generateDraft({{ job.id }})" id="regen-btn" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg border border-gray-700 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrows-rotate"></i><span>Regenerate AI Draft</span>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Matched</h3>
+                        <ul class="space-y-1" id="matched-skills">
+                            <li class="text-sm text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Analyzing...</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Missing (Warnings)</h3>
+                        <ul class="space-y-1" id="missing-skills">
+                            <li class="text-sm text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Analyzing...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Job Description Panel -->
+            <div class="bg-gray-900 border border-gray-800 rounded-2xl flex flex-col flex-1 shadow-lg overflow-hidden">
+                <div class="p-4 border-b border-gray-800 bg-gray-900/50">
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest"><i class="fa-solid fa-file-lines text-gray-500 mr-2"></i> Job Description</h2>
+                </div>
+                <div class="p-5 overflow-y-auto custom-scroll text-sm text-gray-300 whitespace-pre-wrap leading-relaxed h-full">
+                    {{ job.description }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: AI Email Draft -->
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl shadow-lg flex flex-col h-full overflow-hidden">
+            <div class="p-4 border-b border-gray-800 bg-gray-900/50 flex justify-between items-center">
+                <h2 class="text-sm font-bold text-gray-300 uppercase tracking-widest"><i class="fa-solid fa-envelope-open-text text-blue-500 mr-2"></i> Application Email Draft</h2>
+                <button onclick="copyEmail()" class="text-xs text-blue-400 hover:text-blue-300 font-semibold transition"><i class="fa-solid fa-copy mr-1"></i> Copy All</button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto custom-scroll space-y-5" id="draft-editor">
+                
+                <!-- Loading State -->
+                <div id="loading-overlay" class="flex flex-col items-center justify-center h-full space-y-4 text-blue-500">
+                    <i class="fa-solid fa-wand-magic-sparkles text-4xl animate-bounce"></i>
+                    <p class="text-sm font-bold tracking-widest uppercase animate-pulse">Tailoring application from Master Profile...</p>
+                </div>
+
+                <div id="draft-content" class="hidden space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Subject</label>
+                        <input type="text" id="draft-subject" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Opening Hook</label>
+                        <textarea id="draft-hook" rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Evidence Points (JD Mapping)</label>
+                        <div id="draft-bullets-container" class="space-y-3">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Closing</label>
+                        <textarea id="draft-closing" rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition resize-none"></textarea>
+                    </div>
+                </div>
+
+            </div>
+            <div class="p-4 border-t border-gray-800 bg-gray-900/50 flex justify-end">
+                <button onclick="saveDraft({{ job.id }})" id="save-draft-btn" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-5 rounded-xl text-sm transition flex items-center space-x-2 border border-gray-700">
+                    <i class="fa-solid fa-floppy-disk"></i><span>Save Draft Changes</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            {% if application and application.ai_draft_json %}
+                loadDraftFromJson({{ application.ai_draft_json | safe }});
+            {% else %}
+                generateDraft({{ job.id }});
+            {% endif %}
+        });
+
+        async function generateDraft(jobId) {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            document.getElementById('draft-content').classList.add('hidden');
+            
+            try {
+                const response = await fetch(`/applications/${jobId}/draft`);
+                const data = await response.json();
+                loadDraftFromJson(data);
+            } catch (e) {
+                alert("Failed to generate draft. Check if your AI Context Engine is running properly.");
+                document.getElementById('loading-overlay').classList.add('hidden');
+            }
+        }
+
+        function loadDraftFromJson(data) {
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('draft-content').classList.remove('hidden');
+
+            document.getElementById('draft-subject').value = data.email_subject || '';
+            document.getElementById('draft-hook').value = data.hook || '';
+            document.getElementById('draft-closing').value = data.closing || '';
+
+            const container = document.getElementById('draft-bullets-container');
+            container.innerHTML = '';
+            (data.evidence_bullets || []).forEach(bullet => {
+                const ta = document.createElement('textarea');
+                ta.rows = 2;
+                ta.className = "w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition resize-none bullet-point";
+                ta.value = bullet;
+                container.appendChild(ta);
+            });
+
+            const matchedList = document.getElementById('matched-skills');
+            matchedList.innerHTML = (data.matched_skills || []).map(s => `<li class="text-sm text-gray-300"><i class="fa-solid fa-check text-green-500 mr-2"></i> ${s}</li>`).join('');
+            if(!data.matched_skills?.length) matchedList.innerHTML = '<li class="text-sm text-gray-600 italic">None</li>';
+
+            const missingList = document.getElementById('missing-skills');
+            missingList.innerHTML = (data.missing_skills || []).map(s => `<li class="text-sm text-gray-400"><i class="fa-solid fa-triangle-exclamation text-yellow-500 mr-2"></i> ${s}</li>`).join('');
+            if(!data.missing_skills?.length) missingList.innerHTML = '<li class="text-sm text-gray-600 italic">None</li>';
+        }
+
+        async function saveDraft(jobId) {
+            const btn = document.getElementById('save-draft-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+            
+            const bullets = Array.from(document.querySelectorAll('.bullet-point')).map(ta => ta.value);
+            const draft = {
+                email_subject: document.getElementById('draft-subject').value,
+                hook: document.getElementById('draft-hook').value,
+                evidence_bullets: bullets,
+                closing: document.getElementById('draft-closing').value
+            };
+
+            await fetch(`/applications/${jobId}/save-draft`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(draft)
+            });
+
+            btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i><span class="text-green-400">Saved</span>';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Save Draft Changes</span>';
+            }, 2000);
+        }
+
+        async function markApplied(jobId) {
+            await saveDraft(jobId);
+            await fetch(`/applications/${jobId}/status?status=APPLIED`, { method: 'POST' });
+            window.location.href = "/?status=APPLIED";
+        }
+
+        function copyEmail() {
+            const subject = document.getElementById('draft-subject').value;
+            const hook = document.getElementById('draft-hook').value;
+            const bullets = Array.from(document.querySelectorAll('.bullet-point')).map(ta => "• " + ta.value).join("\n");
+            const closing = document.getElementById('draft-closing').value;
+            
+            const fullText = `Subject: ${subject}\n\n${hook}\n\n${bullets}\n\n${closing}`;
+            navigator.clipboard.writeText(fullText);
+            alert("Copied to clipboard!");
+        }
+    </script>
+</body>
+</html>

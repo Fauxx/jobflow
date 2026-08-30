@@ -226,33 +226,8 @@
                 skills: skills,
                 projects: projects,
                 experience: experience,
-                education: [
-                    {
-                        school: "Technological University of the Philippines (TUP)",
-                        location: "Manila, Philippines",
-                        degree: "Bachelor of Engineering Technology major in Computer Engineering Technology",
-                        date: "Graduation: Aug 2026"
-                    }
-                ],
-                master_profile: {
-                    summary_context: document.getElementById('master-summary-context').value,
-                    projects: [
-                        {
-                            title: "IoT-Based Fire Monitoring & Cloud-Native Analytics Platform",
-                            detailed_context: document.getElementById('master-proj-iot').value
-                        }
-                    ],
-                    experience: [
-                        {
-                            company: "InfoTouch Corporation",
-                            detailed_context: document.getElementById('master-exp-infotouch').value
-                        },
-                        {
-                            company: "Concentrix",
-                            detailed_context: document.getElementById('master-exp-concentrix').value
-                        }
-                    ]
-                }
+                education: {{ resume.get("education", []) | tojson }},
+                master_profile: {{ resume.get("master_profile", {}) | tojson }}
             };
 
             try {

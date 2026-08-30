@@ -3,279 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jobflow Dashboard</title>
+    <title>Jobflow — Pipeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link href="/static/css/main.css?v=4" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #111827; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+    </style>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans">
-
-    <!-- Top Navigation Bar -->
-    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center">
-        <div class="flex items-center space-x-3">
-            <div class="bg-blue-600 p-2 rounded-lg text-white font-bold text-xl">
-                <i class="fa-solid fa-compass"></i>
-            </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-tight">Jobflow 🚀</h1>
-                <p class="text-xs text-gray-400">Human-in-the-Loop Job Search & Resume Cockpit</p>
-            </div>
-        </div>
-        <div class="flex items-center space-x-3">
-            <a href="/resume" class="bg-gray-700 hover:bg-gray-650 text-white font-semibold py-2.5 px-4 rounded-lg flex items-center space-x-2 transition duration-150">
-                <i class="fa-solid fa-file-pen text-blue-400"></i>
-                <span>Edit Base Resume</span>
-            </a>
-            <a href="/resume/print" target="_blank" class="bg-indigo-700 hover:bg-indigo-650 text-white font-semibold py-2.5 px-4 rounded-lg flex items-center space-x-2 transition duration-150">
-                <i class="fa-solid fa-print"></i>
-                <span>Print Resume</span>
-            </a>
-        </div>
-    </header>
-
-    <!-- Main Dashboard Container -->
-    <div class="flex flex-1 overflow-hidden">
-        
-        <!-- Sidebar Navigation & Scraper Settings -->
-        {% include "partials/sidebar.html" %}
-
-        <!-- Content Area -->
-        <main class="flex-1 flex overflow-hidden">
-            
-            <!-- Job List Panel -->
-            <section class="w-1/3 border-r border-gray-700 overflow-y-auto p-4 space-y-3 custom-scroll">
-                
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">
-                        {{ current_status }} Listings (<span id="job-count-display">{{ jobs|length }}</span>)
-                    </h2>
-                </div>
-                
-                <div id="job-list-container" class="space-y-3">
-
-
-                {% if not jobs %}
-                <div class="text-center py-16 text-gray-500">
-                    <i class="fa-regular fa-folder-open text-4xl mb-3 block text-gray-600"></i>
-                    No postings found.
-                </div>
-                {% endif %}
-
-                {% for job in jobs %}
-                <div class="bg-gray-800 hover:bg-gray-750 border border-gray-700 p-4 rounded-xl cursor-pointer transition duration-150 hover:border-gray-500 job-card" 
-                     id="job-card-{{ job.id }}"
-                     data-id="{{ job.id }}"
-                     data-title="{{ job.title|e }}"
-                     data-company="{{ job.company|e }}"
-                     data-location="{{ job.location|e if job.location else 'Remote' }}"
-                     data-email="{{ job.contact_email|e if job.contact_email else 'recruitment@example.com' }}"
-                     data-url="{{ job.source_url|e if job.source_url else '' }}"
-                     data-description="{{ job.description|e if job.description else '' }}">
-                    <div class="flex justify-between items-start gap-2 mb-1.5">
-                        <h3 class="font-bold text-blue-400 text-sm leading-snug">{{ job.title }}</h3>
-                        <span class="text-[10px] font-bold bg-gray-700 px-2 py-0.5 rounded text-gray-300 shrink-0 uppercase tracking-wider">{{ job.source }}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-xs text-gray-400 mt-2">
-                        <span>{{ job.company }}</span>
-                        <div class="flex items-center space-x-2 text-[10px]">
-                            <span><i class="fa-solid fa-location-dot mr-1 text-gray-500"></i>{{ job.location or 'Remote' }}</span>
-                            {% if job.posted_time %}
-                            <span class="text-gray-650">•</span>
-                            <span class="text-gray-400"><i class="fa-regular fa-clock mr-1 text-gray-500"></i>{{ job.posted_time }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-
-                {% if total_pages > 1 %}
-                <div class="flex justify-between items-center pt-4 mt-2 border-t border-gray-700 text-xs text-gray-400">
-                    <a href="/?status={{ current_status }}&source={{ current_source }}&page={{ page - 1 }}" 
-                       class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-750 rounded-lg text-gray-300 font-semibold transition {% if page <= 1 %}pointer-events-none opacity-40{% endif %}">
-                        <i class="fa-solid fa-angle-left mr-1"></i> Prev
-                    </a>
-                    <span class="font-medium">Page {{ page }} of {{ total_pages }}</span>
-                    <a href="/?status={{ current_status }}&source={{ current_source }}&page={{ page + 1 }}" 
-                       class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-750 rounded-lg text-gray-300 font-semibold transition {% if page >= total_pages %}pointer-events-none opacity-40{% endif %}">
-                        Next <i class="fa-solid fa-angle-right ml-1"></i>
-                    </a>
-                </div>
-                {% endif %}
-            
-                </div>
-                <div id="pagination-controls" class="hidden flex justify-between items-center mt-4 px-1">
-                    <button id="prev-page" class="text-xs bg-gray-700 hover:bg-gray-600 text-white py-1 px-3 rounded transition">Previous</button>
-                    <span id="page-info" class="text-xs text-gray-400">Page 1</span>
-                    <button id="next-page" class="text-xs bg-gray-700 hover:bg-gray-600 text-white py-1 px-3 rounded transition">Next</button>
-                </div>
-
-            </section>
-
-            <!-- Job Detail & Copy-Paste Cockpit Panel -->
-            <section class="w-2/3 overflow-y-auto p-6 bg-gray-850 custom-scroll" id="detail-panel">
-                <div class="text-center py-32 text-gray-500" id="no-job-selected">
-                    <i class="fa-solid fa-window-restore text-5xl mb-4 block text-gray-700"></i>
-                    Select a job listing from the left to load the tailoring cockpit.
-                </div>
-
-                <div class="hidden space-y-6" id="job-detail-content">
-                    
-                    <!-- Job Header and Quick Actions -->
-                    <div class="border-b border-gray-700 pb-4 flex justify-between items-start">
-                        <div class="space-y-3 flex-1 mr-4">
-                            <div>
-                                <h2 class="text-2xl font-bold text-white leading-tight" id="detail-title">Job Title</h2>
-                                <p class="text-lg text-gray-300 mt-1" id="detail-company">Company Name</p>
-                                <p class="text-sm text-gray-500 mt-1 flex items-center"><i class="fa-solid fa-location-dot mr-1.5"></i> <span id="detail-location">Location</span></p>
-                            </div>
-                            <!-- Visible, Copyable Job URL Link -->
-                            <div class="flex items-center space-x-2 bg-gray-900 border border-gray-700 rounded-lg p-1.5 w-full max-w-xl">
-                                <span class="text-xs text-gray-500 font-bold px-2 shrink-0">JOB URL:</span>
-                                <input type="text" id="detail-url-input" readonly class="bg-transparent text-xs text-gray-300 focus:outline-none w-full truncate">
-                                <a id="detail-url-go" href="#" target="_blank" class="text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1 px-2.5 rounded transition shrink-0 flex items-center justify-center">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                </a>
-                                <button onclick="copyToClipboard('detail-url-input')" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-1 px-2.5 rounded transition shrink-0">
-                                    <i class="fa-regular fa-copy"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="flex flex-col space-y-2 items-end shrink-0">
-                            <a id="detail-link" href="#" target="_blank" class="bg-blue-600 hover:bg-blue-750 text-white font-bold py-2.5 px-5 rounded-lg flex items-center space-x-2 text-sm transition">
-                                <span>Apply on Platform</span>
-                                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
-                            </a>
-                            <div class="flex space-x-2">
-                                <form id="skip-form" action="" method="post" class="inline">
-                                    <input type="hidden" name="status" value="SKIPPED">
-                                    <button type="submit" class="bg-gray-700 hover:bg-gray-650 text-gray-300 font-semibold py-1.5 px-3 rounded text-xs transition">
-                                        Skip
-                                    </button>
-                                </form>
-                                <form id="approve-form" action="" method="post" class="inline">
-                                    <input type="hidden" name="status" value="APPROVED">
-                                    <button type="submit" class="bg-green-700 hover:bg-green-650 text-white font-semibold py-1.5 px-3 rounded text-xs transition">
-                                        Approve Lead
-                                    </button>
-                                </form>
-                                <form id="apply-form" action="" method="post" class="inline">
-                                    <input type="hidden" name="status" value="APPLIED">
-                                    <button type="submit" class="bg-indigo-700 hover:bg-indigo-650 text-white font-semibold py-1.5 px-3 rounded text-xs transition">
-                                        Mark Applied
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Split layout: Job description & Copier tools -->
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        
-                        <!-- Left: Job Description -->
-                        <div class="space-y-3">
-                            <h3 class="font-bold text-gray-400 text-xs uppercase tracking-wider">Job Description</h3>
-                            <div class="bg-gray-800 p-4 rounded-lg text-sm text-gray-300 h-[600px] overflow-y-auto whitespace-pre-wrap leading-relaxed border border-gray-700 custom-scroll" id="detail-description">
-                                Description...
-                            </div>
-                        </div>
-
-                        <!-- Right: AI Tools / Clipboard Workspace -->
-                        <div class="space-y-6">
-                            
-                            <!-- Action button to launch AI generation -->
-                            <div class="bg-gray-800 p-4 rounded-lg border border-blue-900/50 flex justify-between items-center">
-                                <div>
-                                    <h4 class="font-bold text-white text-sm">AI Tailoring Assistant</h4>
-                                    <p class="text-xs text-gray-400">Generate cover letters, key matches, and custom bullets</p>
-                                </div>
-                                <button onclick="tailorAll()" id="tailor-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-xs flex items-center space-x-1.5 transition">
-                                    <i class="fa-solid fa-wand-magic-sparkles animate-pulse"></i>
-                                    <span>Tailor Now</span>
-                                </button>
-                            </div>
-
-                            <!-- Tabs: 1. Cover Letter, 2. Resume Bullets, 3. Q&A Answers -->
-                            <div class="space-y-4">
-                                <div class="flex border-b border-gray-700">
-                                    <button onclick="switchTab('tab-cover')" class="px-4 py-2 border-b-2 font-bold text-xs uppercase tracking-wider transition active-tab-btn" id="btn-tab-cover">Cover Letter</button>
-                                    <button onclick="switchTab('tab-bullets')" class="px-4 py-2 border-b-2 font-bold text-xs uppercase tracking-wider transition text-gray-500 border-transparent hover:text-white" id="btn-tab-bullets">Tailor Resume Bullets</button>
-                                    <button onclick="switchTab('tab-qa')" class="px-4 py-2 border-b-2 font-bold text-xs uppercase tracking-wider transition text-gray-500 border-transparent hover:text-white" id="btn-tab-qa">Screening Q&A</button>
-                                </div>
-
-                                <!-- Tab content 1: Cover Letter -->
-                                <div id="tab-cover" class="space-y-3">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-xs text-gray-400">Generated Email / Introduction text</span>
-                                        <button onclick="copyToClipboard('form-body')" class="text-xs bg-gray-700 hover:bg-gray-600 text-white font-semibold py-1 px-2.5 rounded flex items-center space-x-1 transition">
-                                            <i class="fa-regular fa-copy"></i> <span>Copy Text</span>
-                                        </button>
-                                    </div>
-                                    <textarea id="form-body" rows="18" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-xs text-gray-300 focus:outline-none focus:border-blue-500 font-mono leading-relaxed"></textarea>
-                                </div>
-
-                                <!-- Tab content 2: Optimized Resume Bullets -->
-                                <div id="tab-bullets" class="hidden space-y-4">
-                                    <p class="text-xs text-gray-400">Swap specific bullets in your resume with these tailored versions to match the job requirements before printing.</p>
-                                    <div id="bullets-list" class="space-y-3">
-                                        <p class="text-center py-6 text-xs text-gray-500">Click "Tailor Now" to load bullet optimizations.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Tab content 3: Screening Q&A -->
-                                <div id="tab-qa" class="hidden space-y-4">
-                                    <p class="text-xs text-gray-400">AI-generated answers to common screening questions for this application.</p>
-                                    <div id="qa-list" class="space-y-3">
-                                        <p class="text-center py-6 text-xs text-gray-500">Click "Tailor Now" to load screening answers.</p>
-                                    </div>
-                                </div>
-
-                            </div>
-                            
-                        </div>
-
-                    </div>
-
-                </div>
-            
-                </div>
-                <div id="pagination-controls" class="hidden flex justify-between items-center mt-4 px-1">
-                    <button id="prev-page" class="text-xs bg-gray-700 hover:bg-gray-600 text-white py-1 px-3 rounded transition">Previous</button>
-                    <span id="page-info" class="text-xs text-gray-400">Page 1</span>
-                    <button id="next-page" class="text-xs bg-gray-700 hover:bg-gray-600 text-white py-1 px-3 rounded transition">Next</button>
-                </div>
-
-            </section>
-
-        </main>
-    </div>
-
-    <!-- Optimization Applied Toast -->
-    <div id="save-toast" class="hidden fixed bottom-5 right-5 bg-green-600 text-white py-3 px-6 rounded-lg shadow-lg font-bold z-50 flex items-center space-x-2">
-        <i class="fa-solid fa-circle-check text-lg"></i>
-        <span>Resume updated successfully!</span>
-    </div>
-
+<body class="bg-gray-950 text-gray-100 min-h-screen flex font-sans">
     
-
-    <!-- Cookie Import Modal -->
-    <div id="cookie-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-gray-850 border border-gray-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center pb-2 border-b border-gray-700">
-                <h3 class="text-lg font-bold text-white flex items-center"><i class="fa-solid fa-cookie text-yellow-400 mr-2"></i> Import Cookies (<span id="cookie-modal-platform-title">Indeed</span>)</h3>
-                <button onclick="closeCookieModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col fixed h-full z-10">
+        <div class="p-6 border-b border-gray-800">
+            <div class="flex items-center space-x-3 mb-2">
+                <div class="bg-blue-600 p-2 rounded-xl shadow-lg">
+                    <i class="fa-solid fa-briefcase text-white"></i>
+                </div>
+                <h1 class="text-xl font-black text-white tracking-tight">Jobflow</h1>
             </div>
-            <p class="text-xs text-gray-400 leading-relaxed">
-                Export cookies from your active browser session (where you are logged in) using an extension like <span class="text-blue-400 font-semibold">Cookie-Editor</span> or <span class="text-blue-400 font-semibold">EditThisCookie</span>. Choose <strong>Export JSON</strong> and paste it below:
-            </p>
-            <input type="hidden" id="cookie-modal-platform">
-            <textarea id="cookie-modal-json" placeholder="[ { &quot;name&quot;: &quot;session...&quot;, &quot;value&quot;: &quot;...&quot; } ]" class="w-full h-48 bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs font-mono text-gray-300 focus:outline-none focus:border-blue-500 custom-scroll"></textarea>
-            <div class="flex justify-end space-x-2 pt-2">
-                <button type="button" onclick="closeCookieModal()" class="bg-gray-750 hover:bg-gray-700 text-gray-300 font-semibold py-1.5 px-4 rounded-xl text-xs transition">Cancel</button>
-                <button type="button" onclick="saveImportedCookies()" id="cookie-save-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1.5 px-4 rounded-xl text-xs transition">Save Cookies</button>
+            <p class="text-xs text-gray-400">Autonomous Job Pipeline</p>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-1">
+            <a href="/" class="flex items-center space-x-3 px-4 py-3 bg-gray-800 text-white rounded-xl font-bold transition">
+                <i class="fa-solid fa-layer-group w-5"></i>
+                <span>Pipeline</span>
+            </a>
+            <a href="/profile" class="flex items-center space-x-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-bold transition">
+                <i class="fa-solid fa-user-gear w-5"></i>
+                <span>Master Profile</span>
+            </a>
+            <a href="/resume" class="flex items-center space-x-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-bold transition">
+                <i class="fa-solid fa-file-contract w-5"></i>
+                <span>Resume Builder</span>
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-gray-800">
+            <a href="/auth/logout" class="flex items-center space-x-3 px-4 py-2 text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <span class="text-sm font-bold">Sign Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 p-8">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-white">Application Pipeline</h2>
+                <p class="text-gray-400 text-sm mt-1">Discover, tailor, and track your applications.</p>
+            </div>
+            <div class="flex space-x-3">
+                <button onclick="runScraper()" id="scrape-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition flex items-center space-x-2 shadow-lg shadow-blue-900/20">
+                    <i class="fa-solid fa-radar-pro"></i>
+                    <span>Discover New Jobs</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Pipeline Tabs -->
+        <div class="flex space-x-2 mb-6 border-b border-gray-800 pb-px">
+            <a href="/?status=NEW" class="px-5 py-3 font-bold text-sm tracking-wide transition border-b-2 {{ 'text-white border-blue-500' if current_status == 'NEW' else 'text-gray-500 border-transparent hover:text-white' }}">
+                New Leads <span class="bg-blue-600/20 text-blue-400 py-0.5 px-2 rounded-full text-xs ml-1" id="badge-new">{{ counts.get('NEW', 0) }}</span>
+            </a>
+            <a href="/?status=APPROVED" class="px-5 py-3 font-bold text-sm tracking-wide transition border-b-2 {{ 'text-white border-blue-500' if current_status == 'APPROVED' else 'text-gray-500 border-transparent hover:text-white' }}">
+                Approved <span class="bg-gray-800 text-gray-300 py-0.5 px-2 rounded-full text-xs ml-1" id="badge-approved">{{ counts.get('APPROVED', 0) }}</span>
+            </a>
+            <a href="/?status=APPLIED" class="px-5 py-3 font-bold text-sm tracking-wide transition border-b-2 {{ 'text-white border-blue-500' if current_status == 'APPLIED' else 'text-gray-500 border-transparent hover:text-white' }}">
+                Applied <span class="bg-gray-800 text-gray-300 py-0.5 px-2 rounded-full text-xs ml-1" id="badge-applied">{{ counts.get('APPLIED', 0) }}</span>
+            </a>
+            <a href="/?status=SKIPPED" class="px-5 py-3 font-bold text-sm tracking-wide transition border-b-2 {{ 'text-white border-blue-500' if current_status == 'SKIPPED' else 'text-gray-500 border-transparent hover:text-white' }}">
+                Skipped <span class="bg-gray-800 text-gray-300 py-0.5 px-2 rounded-full text-xs ml-1" id="badge-skipped">{{ counts.get('SKIPPED', 0) }}</span>
+            </a>
+        </div>
+
+        <!-- Job List -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="job-grid">
+            {% for job in jobs %}
+            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition shadow-lg flex flex-col" id="job-card-{{ job.id }}">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="text-xs font-bold px-2 py-1 bg-gray-800 rounded text-gray-400 uppercase tracking-wider flex items-center">
+                        {% if 'linkedin' in job.source.lower() %}<i class="fa-brands fa-linkedin text-blue-500 mr-1.5"></i>
+                        {% elif 'indeed' in job.source.lower() %}<i class="fa-solid fa-info-circle text-blue-400 mr-1.5"></i>
+                        {% endif %}
+                        {{ job.source }}
+                    </div>
+                    <span class="text-xs text-gray-500">{{ job.date_posted.strftime('%b %d') if job.date_posted else 'New' }}</span>
+                </div>
+                
+                <h3 class="text-lg font-bold text-white leading-tight mb-1 line-clamp-2" title="{{ job.title }}">{{ job.title }}</h3>
+                <p class="text-blue-400 font-semibold text-sm mb-3">{{ job.company }}</p>
+                
+                <div class="flex items-center text-xs text-gray-400 mb-4 space-x-3">
+                    <div class="flex items-center"><i class="fa-solid fa-location-dot mr-1.5 opacity-70"></i>{{ job.location or 'Remote' }}</div>
+                    {% if job.salary_display %}
+                    <div class="flex items-center"><i class="fa-solid fa-sack-dollar mr-1.5 opacity-70"></i>{{ job.salary_display }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-auto pt-4 border-t border-gray-800 flex justify-between items-center space-x-2">
+                    {% if current_status == 'NEW' or current_status == 'SKIPPED' %}
+                        <a href="/applications/{{ job.id }}/builder" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2.5 px-3 rounded-lg text-center transition">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Approve & Tailor
+                        </a>
+                        <button onclick="updateStatus({{ job.id }}, 'SKIPPED')" class="bg-gray-800 hover:bg-red-900/50 text-gray-400 hover:text-red-400 text-xs font-bold py-2.5 px-4 rounded-lg transition" title="Skip">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    {% elif current_status == 'APPROVED' or current_status == 'APPLIED' %}
+                        <a href="/applications/{{ job.id }}/builder" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold py-2.5 px-3 rounded-lg text-center transition">
+                            <i class="fa-solid fa-pen-to-square mr-1"></i> View Tailoring
+                        </a>
+                    {% endif %}
+                    <a href="{{ job.source_url }}" target="_blank" class="bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-xs font-bold py-2.5 px-4 rounded-lg transition" title="View Source">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-span-full py-20 text-center">
+                <i class="fa-solid fa-inbox text-5xl text-gray-800 mb-4"></i>
+                <h3 class="text-xl font-bold text-gray-500">No {{ current_status.lower() }} jobs found</h3>
+                {% if current_status == 'NEW' %}
+                <p class="text-gray-600 text-sm mt-2">Click "Discover New Jobs" to run the scraper.</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+    </main>
+
+    <!-- Scraper Modal Overlay -->
+    <div id="scrape-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+            <h3 class="text-xl font-bold text-white mb-2">Scrape Jobs</h3>
+            <p class="text-sm text-gray-400 mb-5">Search LinkedIn and Indeed for new leads.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Keywords</label>
+                    <input type="text" id="scrape-keywords" value="DevOps Engineer" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Location</label>
+                    <input type="text" id="scrape-location" value="Remote" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="document.getElementById('scrape-modal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-gray-400 hover:text-white text-sm font-bold transition">Cancel</button>
+                <button onclick="executeScrape()" id="execute-scrape-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-radar-pro"></i><span>Start Scraper</span>
+                </button>
             </div>
         </div>
     </div>
-    <script src="/static/js/main.js?v=4"></script>
+
+    <script>
+        function runScraper() {
+            document.getElementById('scrape-modal').classList.remove('hidden');
+        }
+
+        async function executeScrape() {
+            const btn = document.getElementById('execute-scrape-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Scraping...</span>';
+            btn.disabled = true;
+            
+            const kw = document.getElementById('scrape-keywords').value;
+            const loc = document.getElementById('scrape-location').value;
+            
+            try {
+                const res = await fetch(`/api/scraper/jobs?keywords=${encodeURIComponent(kw)}&location=${encodeURIComponent(loc)}`, { method: 'POST' });
+                const data = await res.json();
+                
+                alert(`Found ${data.jobs.length} new jobs!`);
+                window.location.reload();
+            } catch (e) {
+                alert("Scraping failed.");
+            }
+            
+            btn.innerHTML = '<i class="fa-solid fa-radar-pro"></i><span>Start Scraper</span>';
+            btn.disabled = false;
+            document.getElementById('scrape-modal').classList.add('hidden');
+        }
+
+        async function updateStatus(jobId, status) {
+            await fetch(`/applications/${jobId}/status?status=${status}`, { method: 'POST' });
+            document.getElementById(`job-card-${jobId}`).remove();
+        }
+    </script>
 </body>
 </html>

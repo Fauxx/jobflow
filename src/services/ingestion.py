@@ -36,7 +36,31 @@ class IngestionService:
                     print(f"Failed to fetch details for {cj.source_url}: {e}")
             
             # Add to ephemeral list
+            
+            # Save to database immediately so it gets an ID
+            new_job = Job(
+                external_job_id=cj.external_job_id,
+                source=cj.source,
+                source_url=cj.source_url,
+                title=cj.title,
+                company=cj.company,
+                location=cj.location,
+                description=cj.description,
+                date_posted=cj.date_posted,
+                employment_type=cj.employment_type,
+                salary_display=cj.salary_display,
+                workplace_type=cj.workplace_type,
+                experience_level=cj.experience_level
+            )
+            db.add(new_job)
+            db.commit()
+            db.refresh(new_job)
+            
+            # Also create a NEW application status for the current user (if user context was available, 
+            # but we can do that in dashboard.py instead by fetching jobs with no application)
+            
             ephemeral_jobs.append({
+                "id": new_job.id,
                 "external_job_id": cj.external_job_id,
                 "source": cj.source,
                 "source_url": cj.source_url,

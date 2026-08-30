@@ -27,7 +27,12 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
 
     # Fetch jobs for the selected status
     if status == "NEW":
-        jobs = [] # Ephemeral jobs will be populated by JS here
+        # Jobs that have no application for this user, or application status is NEW
+        from sqlalchemy.orm import outerjoin
+        jobs = db.query(Job).outerjoin(Application, (Job.id == Application.job_id) & (Application.user_id == user.id))\
+                 .filter((Application.id == None) | (Application.status == "NEW"))\
+                 .order_by(Job.date_posted.desc().nulls_last()).all()
+        counts["NEW"] = len(jobs)
     else:
         jobs = db.query(Job).join(Application).filter(
             Application.user_id == user.id,
