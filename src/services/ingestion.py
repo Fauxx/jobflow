@@ -25,7 +25,7 @@ class IngestionService:
                 continue
                 
             # Optionally fetch full details if missing from discover payload
-            if fetch_details and not cj.description:
+            if fetch_details and (not cj.description or len(cj.description) < 1500):
                 try:
                     full_cj = scraper.fetch_job(cj.source_url)
                     # Merge description

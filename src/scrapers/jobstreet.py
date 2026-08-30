@@ -17,7 +17,7 @@ class JobStreetScraper(BaseScraper):
         encoded_loc = urllib.parse.quote(location)
         url = f"https://jobsearch-api.cloud.seek.com.au/v5/search?keywords={encoded_kw}&where={encoded_loc}&pageSize=30"
         
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8', 'Accept-Language': 'en-US,en;q=0.5', 'Upgrade-Insecure-Requests': '1', 'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'none', 'Sec-Fetch-User': '?1', 'Cache-Control': 'max-age=0'})
         
         try:
             with urllib.request.urlopen(req, timeout=10) as response:
@@ -74,32 +74,42 @@ class JobStreetScraper(BaseScraper):
             
         return jobs
 
-    def fetch_job(self, url: str) -> CanonicalJob:
-        # Extract full description from HTML detail page
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    def fetch_job(self, url: str):
+        import urllib.request, re, json
+        from bs4 import BeautifulSoup
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
         with urllib.request.urlopen(req, timeout=10) as response:
             html = response.read().decode('utf-8')
             
-        soup = BeautifulSoup(html, 'html.parser')
-        desc_div = soup.find('div', attrs={'data-automation': 'jobAdDetails'})
-        desc = desc_div.decode_contents() if desc_div else ''
-        
-        # We need a basic canonical job return here. Normally we'd merge this with search data.
-        # For simplicity, returning a partial job with just the description and URL.
-        # The ingestion service should handle merging.
-        
-        # Attempt to parse title and company if accessed directly
-        title_tag = soup.find(attrs={'data-automation': 'job-detail-title'})
-        title = title_tag.get_text(strip=True) if title_tag else "Unknown"
-        
-        comp_tag = soup.find(attrs={'data-automation': 'advertiser-name'})
-        company = comp_tag.get_text(strip=True) if comp_tag else "Unknown"
-        
-        loc_tag = soup.find(attrs={'data-automation': 'job-detail-location'})
-        location = loc_tag.get_text(strip=True) if loc_tag else None
-        
+        desc = ""
+        title = "Unknown"
+        company = "Unknown"
+        location = None
         job_id = url.split('/')[-1].split('?')[0]
         
+        match = re.search(r'window\.SEEK_REDUX_DATA\s*=\s*(\{.*?\});\n', html)
+        if match:
+            try:
+                data = json.loads(match.group(1))
+                job = data.get('jobdetails', {}).get('result', {}).get('job', {})
+                if job:
+                    raw_content = job.get('content', '')
+                    if raw_content:
+                        desc = BeautifulSoup(raw_content, 'html.parser').get_text(separator='\n').strip()
+                    title = job.get('title', 'Unknown')
+                    if job.get('advertiser'):
+                        company = job['advertiser'].get('name', 'Unknown')
+                    if job.get('location'):
+                        location = job['location'].get('name') if isinstance(job['location'], dict) else str(job['location'])
+            except Exception as e:
+                print(f"Error parsing SEEK_REDUX_DATA: {e}")
+                
+        if not desc:
+            soup = BeautifulSoup(html, 'html.parser')
+            desc_div = soup.find(attrs={'data-automation': re.compile('.*description.*', re.I)})
+            if desc_div:
+                desc = desc_div.get_text(separator='\n').strip()
+
         return CanonicalJob(
             external_job_id=job_id,
             source="jobstreet",
