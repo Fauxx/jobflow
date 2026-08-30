@@ -473,16 +473,40 @@
             // Reconstruct the resume HTML matching the print template exactly
             let html = '';
             
+            // CSS styles injected dynamically so it strictly scopes to the paper box
+            const style = `
+                <style>
+                    #paper-content { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif; font-size: 9.5pt; line-height: 1.35; color: #1a1a1a; }
+                    .prev-header { text-align: center; margin-bottom: 12pt; }
+                    .prev-header h1 { font-size: 18pt; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 3pt; color: #000; }
+                    .prev-header .contact { font-size: 9pt; color: #444; font-weight: 500; }
+                    .prev-section { margin-bottom: 10pt; }
+                    .prev-section-title { font-size: 11pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1.5px solid #d1d5db; padding-bottom: 3pt; margin-bottom: 6pt; color: #111; }
+                    .prev-summary { font-size: 9.5pt; margin-bottom: 6pt; text-align: justify; }
+                    .prev-item-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1pt; }
+                    .prev-item-title { font-weight: 700; font-size: 10.5pt; color: #000; }
+                    .prev-item-date { font-size: 9pt; color: #444; font-weight: 600; }
+                    .prev-item-sub { display: flex; justify-content: space-between; align-items: baseline; font-style: italic; font-size: 9.5pt; margin-bottom: 4pt; color: #333; }
+                    ul.prev-bullets { padding-left: 18pt; margin-bottom: 6pt; margin-top: 2pt; list-style-type: disc; }
+                    ul.prev-bullets li { font-size: 9.5pt; margin-bottom: 3.5pt; text-align: justify; padding-left: 2pt; }
+                    ul.prev-skills { padding-left: 18pt; margin-bottom: 6pt; list-style-type: disc; }
+                    ul.prev-skills li { font-size: 9.5pt; margin-bottom: 2pt; }
+                    ul.prev-skills strong { font-weight: 700; color: #000; }
+                </style>
+            `;
+            html += style;
+            
             // Header
             html += `
-                <div style="text-align: center; margin-bottom: 8pt;">
-                    <h1 style="font-size: 14pt; font-weight: bold; margin-bottom: 2pt;">{{ profile.name or 'Candidate' }}</h1>
-                    <p style="font-size: 8.5pt; color: #333;">
+                <div class="prev-header">
+                    <h1>{{ profile.name or 'Candidate' }}</h1>
+                    <p class="contact">
                         {% if profile %}
                             {{ profile.location or '' }}
-                            {% if profile.phone %} · {{ profile.phone }}{% endif %}
-                            {% if profile.linkedin_url %} · {{ profile.linkedin_url }}{% endif %}
-                            {% if profile.github_url %} · {{ profile.github_url }}{% endif %}
+                            {% if profile.phone %} &bull; {{ profile.phone }}{% endif %}
+                            {% if profile.linkedin_url %} &bull; {{ profile.linkedin_url }}{% endif %}
+                            {% if profile.github_url %} &bull; {{ profile.github_url }}{% endif %}
+                            {% if profile.user %} &bull; {{ profile.user.email }}{% endif %}
                         {% endif %}
                     </p>
                 </div>
@@ -491,9 +515,9 @@
             // Summary
             if (data.summary) {
                 html += `
-                    <div style="margin-bottom: 6pt;">
-                        <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Professional Summary</div>
-                        <p style="font-size: 9.5pt; margin-bottom: 4pt;">${data.summary}</p>
+                    <div class="prev-section">
+                        <div class="prev-section-title">Professional Summary</div>
+                        <p class="prev-summary">${data.summary}</p>
                     </div>
                 `;
             }
@@ -501,9 +525,11 @@
             // Skills
             if (data.skills && data.skills.length > 0) {
                 html += `
-                    <div style="margin-bottom: 6pt;">
-                        <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Technical Skills</div>
-                        ${data.skills.map(c => `<p style="font-size: 9.5pt; margin-bottom: 1pt;"><strong>${c.category}:</strong> ${c.skills.join(', ')}</p>`).join('')}
+                    <div class="prev-section">
+                        <div class="prev-section-title">Technical Skills</div>
+                        <ul class="prev-skills">
+                        ${data.skills.map(c => `<li><strong>${c.category}:</strong> ${c.skills.join(', ')}</li>`).join('')}
+                        </ul>
                     </div>
                 `;
             }
@@ -511,17 +537,20 @@
             // Experience
             if (data.experiences && data.experiences.length > 0) {
                 html += `
-                    <div style="margin-bottom: 6pt;">
-                        <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Professional Experience</div>
+                    <div class="prev-section">
+                        <div class="prev-section-title">Professional Experience</div>
                         ${data.experiences.map(exp => `
-                            <div style="margin-bottom: 6pt;">
-                                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1pt;">
-                                    <span style="font-weight: bold; font-size: 9.5pt;">${exp.title} — ${exp.company}</span>
-                                    <span style="font-size: 8.5pt; color: #333;">${exp.date_range}</span>
+                            <div style="margin-bottom: 8pt;">
+                                <div class="prev-item-header">
+                                    <span class="prev-item-title">${exp.title}</span>
+                                    <span class="prev-item-date">${exp.date_range}</span>
                                 </div>
-                                <div style="font-size: 9.5pt; font-style: italic; margin-bottom: 2pt;">${exp.location}</div>
-                                <ul style="margin-left: 16pt; margin-bottom: 4pt;">
-                                    ${exp.bullets.map(b => `<li style="font-size: 9.5pt; margin-bottom: 1.5pt;">${b.tailored_text}</li>`).join('')}
+                                <div class="prev-item-sub">
+                                    <span>${exp.company}</span>
+                                    <span>${exp.location}</span>
+                                </div>
+                                <ul class="prev-bullets">
+                                    ${exp.bullets.map(b => `<li>${b.tailored_text}</li>`).join('')}
                                 </ul>
                             </div>
                         `).join('')}
@@ -532,17 +561,20 @@
             // Projects
             if (data.projects && data.projects.length > 0) {
                 html += `
-                    <div style="margin-bottom: 6pt;">
-                        <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Projects</div>
+                    <div class="prev-section">
+                        <div class="prev-section-title">Projects</div>
                         ${data.projects.map(proj => `
-                            <div style="margin-bottom: 6pt;">
-                                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1pt;">
-                                    <span style="font-weight: bold; font-size: 9.5pt;">${proj.name}</span>
-                                    <span style="font-size: 8.5pt; color: #333;">${proj.date_range}</span>
+                            <div style="margin-bottom: 8pt;">
+                                <div class="prev-item-header">
+                                    <span class="prev-item-title">${proj.name}</span>
+                                    <span class="prev-item-date">${proj.date_range}</span>
                                 </div>
-                                ${proj.role ? `<div style="font-size: 9.5pt; font-style: italic; margin-bottom: 2pt;">${proj.role}${proj.tech_stack ? ` | ${proj.tech_stack}` : ''}</div>` : ''}
-                                <ul style="margin-left: 16pt; margin-bottom: 4pt;">
-                                    ${proj.bullets.map(b => `<li style="font-size: 9.5pt; margin-bottom: 1.5pt;">${b.tailored_text}</li>`).join('')}
+                                ${proj.role ? `
+                                <div class="prev-item-sub">
+                                    <span>${proj.role}${proj.tech_stack ? ` &bull; ${proj.tech_stack}` : ''}</span>
+                                </div>` : ''}
+                                <ul class="prev-bullets">
+                                    ${proj.bullets.map(b => `<li>${b.tailored_text}</li>`).join('')}
                                 </ul>
                             </div>
                         `).join('')}
@@ -552,16 +584,19 @@
             
             // Education
             html += `
-                <div style="margin-bottom: 6pt;">
-                    <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Education</div>
+                <div class="prev-section">
+                    <div class="prev-section-title">Education</div>
                     {% if profile and profile.education %}
                         {% for edu in profile.education %}
-                        <div style="margin-bottom: 4pt;">
-                            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1pt;">
-                                <span style="font-weight: bold; font-size: 9.5pt;">{{ edu.degree }}</span>
-                                <span style="font-size: 8.5pt; color: #333;">{{ edu.date_str or '' }}</span>
+                        <div style="margin-bottom: 6pt;">
+                            <div class="prev-item-header">
+                                <span class="prev-item-title">{{ edu.degree }}</span>
+                                <span class="prev-item-date">{{ edu.date_str or '' }}</span>
                             </div>
-                            <div style="font-size: 9.5pt; font-style: italic; margin-bottom: 2pt;">{{ edu.institution }}{% if edu.location %}, {{ edu.location }}{% endif %}</div>
+                            <div class="prev-item-sub">
+                                <span>{{ edu.institution }}</span>
+                                <span>{{ edu.location or '' }}</span>
+                            </div>
                         </div>
                         {% endfor %}
                     {% endif %}
@@ -571,10 +606,10 @@
             // Certifications
             if (data.certifications && data.certifications.length > 0) {
                 html += `
-                    <div style="margin-bottom: 6pt;">
-                        <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Certifications</div>
-                        <ul style="margin-left: 16pt; margin-bottom: 4pt;">
-                            ${data.certifications.map(c => `<li style="font-size: 9.5pt; margin-bottom: 1.5pt;">${c}</li>`).join('')}
+                    <div class="prev-section">
+                        <div class="prev-section-title">Certifications</div>
+                        <ul class="prev-bullets">
+                            ${data.certifications.map(c => `<li>${c}</li>`).join('')}
                         </ul>
                     </div>
                 `;
@@ -587,8 +622,6 @@
             document.getElementById('preview-modal').classList.remove('hidden');
             
             // Check overflow
-            // A 10 inch content area (11in - 1in margins) = 960px at 96 DPI
-            // In CSS, 10in is exactly 960px. We check if paper-content height exceeds this.
             setTimeout(() => {
                 const limitPx = 10 * 96; // 10 inches in pixels
                 const actualHeight = pc.offsetHeight;
@@ -601,7 +634,6 @@
                     w.classList.remove('hidden');
                     s.classList.add('hidden');
                     line.style.display = 'block';
-                    // Allow paper box to grow so they see what got cut off
                     document.getElementById('paper-box').style.height = 'auto';
                 } else {
                     w.classList.add('hidden');
