@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Jobflow Workspace{% endblock %}</title>
+    
+    <!-- External Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Assets -->
+    <link href="/static/css/main.css" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-gray-900 text-gray-200 h-screen flex flex-col font-sans overflow-hidden">
+    
+    <!-- Top Navbar -->
+    <header class="bg-gray-800 border-b border-gray-700 p-4 shrink-0 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <i class="fas fa-layer-group text-blue-500 text-xl"></i>
+            <h1 class="text-xl font-extrabold tracking-tight text-white">Job<span class="text-blue-500">flow</span></h1>
+        </div>
+        <div class="flex items-center space-x-4 text-sm font-medium">
+            <a href="/" class="hover:text-white transition-colors"><i class="fas fa-chart-line mr-1"></i> Dashboard</a>
+            <a href="/profile" class="hover:text-white transition-colors"><i class="fas fa-user-circle mr-1"></i> Profile</a>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        {% include "partials/sidebar.html" %}
+        
+        <main class="flex-1 flex flex-col min-w-0 overflow-y-auto relative bg-gray-900">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    
+    {% block modals %}{% endblock %}
+    
+    <script src="/static/js/main.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

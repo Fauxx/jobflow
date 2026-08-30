@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Profile - Jobflow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans">
+    <!-- Top Navigation Bar -->
+    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2 rounded-lg text-white font-bold text-xl">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <h1 class="text-2xl font-black tracking-tight text-white">Professional Profile</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <a href="/" class="text-gray-400 hover:text-white transition-colors">Back to Dashboard</a>
+        </div>
+    </header>
+
+    <main class="flex-1 p-6 max-w-6xl mx-auto w-full">
+        <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 shadow-xl mb-6">
+            <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Profile Status</h2>
+            <div class="flex items-center space-x-4">
+                <span class="px-3 py-1 bg-yellow-900 text-yellow-300 rounded-full text-sm font-bold uppercase tracking-wider">
+                    DRAFT
+                </span>
+                <p class="text-gray-400 text-sm">Your profile is currently a draft based on your Master Resume. Review and verify it below.</p>
+                <button class="ml-auto bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-bold transition-colors">
+                    <i class="fas fa-check mr-2"></i> Verify Profile
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Skills Section -->
+            <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 shadow-xl">
+                <h3 class="text-lg font-bold mb-4 flex items-center text-blue-400"><i class="fas fa-code mr-2"></i> Core Skills</h3>
+                <div class="flex flex-wrap gap-2">
+                    <span class="bg-gray-700 px-3 py-1 rounded text-sm">Python</span>
+                    <span class="bg-gray-700 px-3 py-1 rounded text-sm">Kubernetes</span>
+                    <span class="bg-gray-700 px-3 py-1 rounded text-sm">Terraform</span>
+                    <span class="bg-gray-700 px-3 py-1 rounded text-sm">Docker</span>
+                    <span class="bg-gray-700 px-3 py-1 rounded text-sm">CI/CD</span>
+                </div>
+            </div>
+
+            <!-- Target Preferences -->
+            <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 shadow-xl">
+                <h3 class="text-lg font-bold mb-4 flex items-center text-blue-400"><i class="fas fa-crosshairs mr-2"></i> Career Goals</h3>
+                <div class="space-y-3 text-sm text-gray-300">
+                    <p><span class="font-bold text-gray-400 w-32 inline-block">Target Roles:</span> DevOps Engineer, Cloud Engineer</p>
+                    <p><span class="font-bold text-gray-400 w-32 inline-block">Location:</span> Remote, Philippines</p>
+                    <p><span class="font-bold text-gray-400 w-32 inline-block">Industries:</span> FinTech, SaaS, Enterprise Software</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
