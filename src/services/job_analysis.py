@@ -1,33 +1,67 @@
+"""
+Job Analysis Service — Gemini AI integration for JD parsing and content generation.
+"""
 import json
-from google import genai
-from google.genai import types
+import requests
+from src.core.config import settings
+
+
+def call_gemini(prompt: str) -> str:
+    """Call Gemini API and return raw text response."""
+    api_key = settings.GEMINI_API_KEY
+    if not api_key:
+        print("[Gemini] No GEMINI_API_KEY set in .env")
+        return "{}"
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "temperature": 0.1
+        }
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        if response.status_code == 200:
+            data = response.json()
+            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        else:
+            print(f"[Gemini] API error {response.status_code}: {response.text[:200]}")
+            return "{}"
+    except Exception as e:
+        print(f"[Gemini] Request failed: {e}")
+        return "{}"
+
 
 def extract_jd_requirements(jd_text: str) -> dict:
-    client = genai.Client()
-    system_instruction = (
-        "You are a senior technical recruiter analyzing a job description. "
-        "Extract the hard skills, responsibilities, domain, and seniority from the text."
-    )
-    
-    schema = {
-        "type": "OBJECT",
-        "properties": {
-            "hard_skills": {"type": "ARRAY", "items": {"type": "STRING"}},
-            "responsibilities": {"type": "ARRAY", "items": {"type": "STRING"}},
-            "domain": {"type": "STRING"},
-            "seniority": {"type": "STRING"}
-        },
-        "required": ["hard_skills", "responsibilities", "domain", "seniority"]
-    }
-    
-    response = client.models.generate_content(
-        model='gemini-2.0-flash',
-        contents=jd_text,
-        config=types.GenerateContentConfig(
-            system_instruction=system_instruction,
-            response_mime_type="application/json",
-            response_schema=schema
-        )
-    )
-    
-    return json.loads(response.text)
+    """Extract structured requirements from a job description using AI."""
+    if not jd_text or not jd_text.strip():
+        return {"hard_skills": [], "responsibilities": [], "domain": "", "seniority": ""}
+
+    prompt = f"""Analyze this job description and extract structured requirements.
+
+Job Description:
+{jd_text}
+
+Return JSON with this exact structure:
+{{
+  "hard_skills": ["list of specific technical skills, tools, languages required"],
+  "responsibilities": ["list of core job responsibilities"],
+  "domain": "the industry or domain (e.g. FinTech, SaaS, Healthcare)",
+  "seniority": "the experience level (e.g. Junior, Mid-level, Senior)"
+}}
+"""
+
+    try:
+        resp = call_gemini(prompt)
+        if "```json" in resp:
+            resp = resp.split("```json", 1)[1].rsplit("```", 1)[0].strip()
+        elif "```" in resp:
+            resp = resp.split("```", 1)[1].rsplit("```", 1)[0].strip()
+        return json.loads(resp)
+    except Exception as e:
+        print(f"[JDAnalysis] Failed to parse: {e}")
+        return {"hard_skills": [], "responsibilities": [], "domain": "", "seniority": ""}
