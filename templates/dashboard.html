@@ -178,10 +178,19 @@
             const loc = document.getElementById('scrape-location').value;
             
             try {
-                const res = await fetch(`/api/scraper/jobs?keywords=${encodeURIComponent(kw)}&location=${encodeURIComponent(loc)}`, { method: 'POST' });
-                const data = await res.json();
+                const formData = new FormData();
+                formData.append('keywords', kw);
+                formData.append('location', loc);
                 
-                alert(`Found ${data.jobs.length} new jobs!`);
+                const res = await fetch('/scrape', { 
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!res.ok) throw new Error('Scrape failed');
+                
+                const data = await res.json();
+                alert(`Scraping complete!`);
                 window.location.reload();
             } catch (e) {
                 alert("Scraping failed.");
