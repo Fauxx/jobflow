@@ -33,6 +33,9 @@
             <button onclick="generateResume()" id="gen-btn" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-xl text-sm transition flex items-center space-x-2 border border-gray-700">
                 <i class="fa-solid fa-wand-magic-sparkles text-blue-400"></i><span>Generate AI Suggestions</span>
             </button>
+            <button onclick="showPreview()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-xl text-sm transition flex items-center space-x-2 shadow-lg">
+                <i class="fa-solid fa-eye"></i><span>1-Page Preview</span>
+            </button>
             <button onclick="saveResume()" id="save-btn" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition flex items-center space-x-2 border border-gray-700">
                 <i class="fa-solid fa-floppy-disk"></i><span>Save Draft</span>
             </button>
@@ -188,6 +191,35 @@
         </div>
     </main>
 
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="flex flex-col w-full h-full max-w-5xl p-6 relative">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center space-x-4">
+                    <h3 class="text-xl font-bold text-white">Live Print Preview</h3>
+                    <div id="page-warning" class="hidden bg-red-900/80 border border-red-500 text-red-200 px-3 py-1 rounded-lg text-sm font-bold flex items-center shadow-lg animate-pulse">
+                        <i class="fa-solid fa-triangle-exclamation mr-2"></i> Content exceeds 1 page! Please trim some bullets.
+                    </div>
+                    <div id="page-success" class="hidden bg-green-900/80 border border-green-500 text-green-200 px-3 py-1 rounded-lg text-sm font-bold flex items-center shadow-lg">
+                        <i class="fa-solid fa-circle-check mr-2"></i> Perfect 1-page fit!
+                    </div>
+                </div>
+                <button onclick="document.getElementById('preview-modal').classList.add('hidden')" class="text-gray-400 hover:text-white transition bg-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-auto flex justify-center custom-scroll pb-10">
+                <div id="paper-box" class="bg-white text-black shadow-2xl relative overflow-hidden" style="width: 8.5in; min-height: 11in; padding: 0.5in; font-family: Arial, sans-serif; font-size: 9.5pt; line-height: 1.25;">
+                    <div id="paper-content"></div>
+                    <div id="page-limit-line" class="absolute left-0 right-0 border-b-2 border-red-500 border-dashed z-10" style="top: 10.5in; display: none;">
+                        <span class="absolute right-0 top-1 text-red-500 font-bold text-xs pr-2 bg-white px-1">PAGE 2 BEGINS</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Toast -->
     <div id="toast" class="hidden fixed bottom-5 right-5 bg-green-600 text-white py-3 px-6 rounded-xl shadow-lg font-bold z-50 flex items-center space-x-2">
         <i class="fa-solid fa-circle-check"></i>
@@ -432,6 +464,152 @@
                 projects,
                 certifications: document.getElementById('field-certs').value.split('\n').filter(c => c.trim())
             };
+        }
+
+        // ─── 1-Page Live Preview ───
+        function showPreview() {
+            const data = gatherResumeData();
+            
+            // Reconstruct the resume HTML matching the print template exactly
+            let html = '';
+            
+            // Header
+            html += `
+                <div style="text-align: center; margin-bottom: 8pt;">
+                    <h1 style="font-size: 14pt; font-weight: bold; margin-bottom: 2pt;">{{ profile.name or 'Candidate' }}</h1>
+                    <p style="font-size: 8.5pt; color: #333;">
+                        {% if profile %}
+                            {{ profile.location or '' }}
+                            {% if profile.phone %} · {{ profile.phone }}{% endif %}
+                            {% if profile.linkedin_url %} · {{ profile.linkedin_url }}{% endif %}
+                            {% if profile.github_url %} · {{ profile.github_url }}{% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+            `;
+            
+            // Summary
+            if (data.summary) {
+                html += `
+                    <div style="margin-bottom: 6pt;">
+                        <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Professional Summary</div>
+                        <p style="font-size: 9.5pt; margin-bottom: 4pt;">${data.summary}</p>
+                    </div>
+                `;
+            }
+            
+            // Skills
+            if (data.skills && data.skills.length > 0) {
+                html += `
+                    <div style="margin-bottom: 6pt;">
+                        <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Technical Skills</div>
+                        ${data.skills.map(c => `<p style="font-size: 9.5pt; margin-bottom: 1pt;"><strong>${c.category}:</strong> ${c.skills.join(', ')}</p>`).join('')}
+                    </div>
+                `;
+            }
+            
+            // Experience
+            if (data.experiences && data.experiences.length > 0) {
+                html += `
+                    <div style="margin-bottom: 6pt;">
+                        <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Professional Experience</div>
+                        ${data.experiences.map(exp => `
+                            <div style="margin-bottom: 6pt;">
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1pt;">
+                                    <span style="font-weight: bold; font-size: 9.5pt;">${exp.title} — ${exp.company}</span>
+                                    <span style="font-size: 8.5pt; color: #333;">${exp.date_range}</span>
+                                </div>
+                                <div style="font-size: 9.5pt; font-style: italic; margin-bottom: 2pt;">${exp.location}</div>
+                                <ul style="margin-left: 16pt; margin-bottom: 4pt;">
+                                    ${exp.bullets.map(b => `<li style="font-size: 9.5pt; margin-bottom: 1.5pt;">${b.tailored_text}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Projects
+            if (data.projects && data.projects.length > 0) {
+                html += `
+                    <div style="margin-bottom: 6pt;">
+                        <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Projects</div>
+                        ${data.projects.map(proj => `
+                            <div style="margin-bottom: 6pt;">
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1pt;">
+                                    <span style="font-weight: bold; font-size: 9.5pt;">${proj.name}</span>
+                                    <span style="font-size: 8.5pt; color: #333;">${proj.date_range}</span>
+                                </div>
+                                ${proj.role ? `<div style="font-size: 9.5pt; font-style: italic; margin-bottom: 2pt;">${proj.role}${proj.tech_stack ? ` | ${proj.tech_stack}` : ''}</div>` : ''}
+                                <ul style="margin-left: 16pt; margin-bottom: 4pt;">
+                                    ${proj.bullets.map(b => `<li style="font-size: 9.5pt; margin-bottom: 1.5pt;">${b.tailored_text}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Education
+            html += `
+                <div style="margin-bottom: 6pt;">
+                    <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Education</div>
+                    {% if profile and profile.education %}
+                        {% for edu in profile.education %}
+                        <div style="margin-bottom: 4pt;">
+                            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1pt;">
+                                <span style="font-weight: bold; font-size: 9.5pt;">{{ edu.degree }}</span>
+                                <span style="font-size: 8.5pt; color: #333;">{{ edu.date_str or '' }}</span>
+                            </div>
+                            <div style="font-size: 9.5pt; font-style: italic; margin-bottom: 2pt;">{{ edu.institution }}{% if edu.location %}, {{ edu.location }}{% endif %}</div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            `;
+            
+            // Certifications
+            if (data.certifications && data.certifications.length > 0) {
+                html += `
+                    <div style="margin-bottom: 6pt;">
+                        <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;">Certifications</div>
+                        <ul style="margin-left: 16pt; margin-bottom: 4pt;">
+                            ${data.certifications.map(c => `<li style="font-size: 9.5pt; margin-bottom: 1.5pt;">${c}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            const pc = document.getElementById('paper-content');
+            pc.innerHTML = html;
+            
+            // Show modal
+            document.getElementById('preview-modal').classList.remove('hidden');
+            
+            // Check overflow
+            // A 10 inch content area (11in - 1in margins) = 960px at 96 DPI
+            // In CSS, 10in is exactly 960px. We check if paper-content height exceeds this.
+            setTimeout(() => {
+                const limitPx = 10 * 96; // 10 inches in pixels
+                const actualHeight = pc.offsetHeight;
+                
+                const w = document.getElementById('page-warning');
+                const s = document.getElementById('page-success');
+                const line = document.getElementById('page-limit-line');
+                
+                if (actualHeight > limitPx) {
+                    w.classList.remove('hidden');
+                    s.classList.add('hidden');
+                    line.style.display = 'block';
+                    // Allow paper box to grow so they see what got cut off
+                    document.getElementById('paper-box').style.height = 'auto';
+                } else {
+                    w.classList.add('hidden');
+                    s.classList.remove('hidden');
+                    line.style.display = 'none';
+                    document.getElementById('paper-box').style.height = '11in';
+                }
+            }, 50);
         }
 
         // ─── Save ───

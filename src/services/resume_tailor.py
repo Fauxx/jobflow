@@ -144,12 +144,10 @@ Generate a tailored resume for THIS specific job. Return JSON with this exact st
   "missing_skills": ["Skills the JD requires that the candidate DOES NOT have"]
 }}
 
-IMPORTANT - STRICT 1-PAGE LENGTH LIMITS:
-- Keep the summary to EXACTLY 2-3 concise sentences.
-- Select ONLY the 2 most relevant experiences (3 maximum if extremely short).
-- For each experience, pick NO MORE THAN 3 concise bullets.
-- Select ONLY 1 or 2 most relevant projects.
-- Consolidate technical skills into 2-3 tight categories.
+IMPORTANT:
+- Generate comprehensive suggestions. The user will manually trim them in the UI.
+- Select all highly relevant experiences and projects.
+- For each experience, pick 4-6 strong, tailored bullets.
 - Skills should be grouped logically and ordered by JD relevance.
 - Every tailored_text must have a corresponding real original_text from the profile.
 """
