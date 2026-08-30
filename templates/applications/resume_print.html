@@ -4,33 +4,33 @@
     <meta charset="UTF-8">
     <title>{{ profile.name or 'Resume' }}</title>
     <style>
-        /* ATS-Safe Resume — Single column, no graphics, standard fonts */
-        @page { size: letter; margin: 1.25cm; }
+        /* ATS-Safe Resume — Single column, strictly 1 page layout */
+        @page { size: letter; margin: 0.5in; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Arial', 'Helvetica', sans-serif; font-size: 10pt; line-height: 1.4; color: #000; }
+        body { font-family: 'Arial', 'Helvetica', sans-serif; font-size: 9.5pt; line-height: 1.25; color: #000; }
         
-        .header { text-align: center; margin-bottom: 12pt; }
-        .header h1 { font-size: 16pt; font-weight: bold; margin-bottom: 4pt; }
-        .header .contact { font-size: 9pt; color: #333; }
+        .header { text-align: center; margin-bottom: 8pt; }
+        .header h1 { font-size: 14pt; font-weight: bold; margin-bottom: 2pt; }
+        .header .contact { font-size: 8.5pt; color: #333; }
         
-        .section { margin-bottom: 10pt; }
+        .section { margin-bottom: 6pt; }
         .section-title {
-            font-size: 11pt; font-weight: bold; text-transform: uppercase;
-            border-bottom: 1pt solid #000; padding-bottom: 2pt; margin-bottom: 6pt;
+            font-size: 10.5pt; font-weight: bold; text-transform: uppercase;
+            border-bottom: 1pt solid #000; padding-bottom: 1pt; margin-bottom: 4pt;
         }
         
-        .summary { font-size: 10pt; margin-bottom: 8pt; }
+        .summary { font-size: 9.5pt; margin-bottom: 4pt; }
         
-        .skills-line { font-size: 10pt; margin-bottom: 2pt; }
+        .skills-line { font-size: 9.5pt; margin-bottom: 1pt; }
         .skills-line strong { font-weight: bold; }
         
-        .exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2pt; }
-        .exp-title { font-weight: bold; font-size: 10pt; }
-        .exp-date { font-size: 9pt; color: #333; }
-        .exp-company { font-size: 10pt; margin-bottom: 4pt; }
+        .exp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1pt; }
+        .exp-title { font-weight: bold; font-size: 9.5pt; }
+        .exp-date { font-size: 8.5pt; color: #333; }
+        .exp-company { font-size: 9.5pt; font-style: italic; margin-bottom: 2pt; }
         
-        ul { margin-left: 18pt; margin-bottom: 8pt; }
-        li { font-size: 10pt; margin-bottom: 2pt; }
+        ul { margin-left: 16pt; margin-bottom: 4pt; }
+        li { font-size: 9.5pt; margin-bottom: 1.5pt; }
         
         @media print {
             body { -webkit-print-color-adjust: exact; }
