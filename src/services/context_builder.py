@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import orm
-from src.models.profile import UserProfile
+from src.models.profile import UserProfile, ProfileProject, ProfileExperience
 from src.models.job import Job
 
 def build_context(db: Session, job: Job, user_id: int) -> str:
     profile = db.query(UserProfile).options(
         orm.selectinload(UserProfile.skills),
-        orm.selectinload(UserProfile.projects).selectinload(UserProfile.bullets),
-        orm.selectinload(UserProfile.experiences).selectinload(UserProfile.bullets),
+        orm.selectinload(UserProfile.projects).selectinload(ProfileProject.bullets),
+        orm.selectinload(UserProfile.experiences).selectinload(ProfileExperience.bullets),
         orm.selectinload(UserProfile.education)
     ).filter(UserProfile.user_id == user_id).first()
     
