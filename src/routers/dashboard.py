@@ -28,10 +28,32 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
     # Fetch jobs for the selected status
     if status == "NEW":
         # Jobs that have no application for this user, or application status is NEW
-        from sqlalchemy.orm import outerjoin
+        from sqlalchemy.orm import outerjoin, selectinload
+        profile = db.query(UserProfile).options(selectinload(UserProfile.skills)).filter(UserProfile.user_id == user.id).first()
+        
         jobs = db.query(Job).outerjoin(Application, (Job.id == Application.job_id) & (Application.user_id == user.id))\
                  .filter((Application.id == None) | (Application.status == "NEW"))\
                  .order_by(Job.date_posted.desc().nulls_last()).all()
+        
+        # Calculate match score
+        user_skills = []
+        if profile and profile.skills:
+            user_skills = [s.name.lower() for s in profile.skills]
+            
+        for job in jobs:
+            if not user_skills:
+                job.match_score = 0
+                continue
+                
+            text_to_search = f"{job.title} {job.description}".lower() if job.description else (job.title or "").lower()
+            matches = sum(1 for skill in user_skills if skill in text_to_search)
+            # Calculate a simple percentage score based on finding up to 10 relevant skills (or user's total skills)
+            max_skills_expected = min(len(user_skills), 15) # Assume finding 15 of their skills is a 100% match
+            job.match_score = int(min((matches / max_skills_expected) * 100, 100)) if max_skills_expected > 0 else 0
+            
+        # Sort by match score descending, then by date posted
+        import datetime
+        jobs.sort(key=lambda j: (j.match_score, j.date_posted.timestamp() if j.date_posted else 0), reverse=True)
         counts["NEW"] = len(jobs)
     else:
         jobs = db.query(Job).join(Application).filter(

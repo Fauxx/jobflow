@@ -36,10 +36,7 @@
                 <i class="fa-solid fa-user-gear w-5"></i>
                 <span>Master Profile</span>
             </a>
-            <a href="/resume" class="flex items-center space-x-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-bold transition">
-                <i class="fa-solid fa-file-contract w-5"></i>
-                <span>Resume Builder</span>
-            </a>
+
         </nav>
         
         <div class="p-4 border-t border-gray-800">
@@ -97,13 +94,23 @@
                     <span class="text-xs text-gray-500">{{ job.date_posted.strftime('%b %d') if job.date_posted else 'New' }}</span>
                 </div>
                 
-                <h3 class="text-lg font-bold text-white leading-tight mb-1 line-clamp-2" title="{{ job.title }}">{{ job.title }}</h3>
+                <div class="flex justify-between items-start mb-1 gap-2">
+                    <h3 class="text-lg font-bold text-white leading-tight line-clamp-2" title="{{ job.title }}">{{ job.title }}</h3>
+                    {% if current_status == 'NEW' and job.match_score and job.match_score >= 50 %}
+                    <span class="bg-indigo-900/80 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap border border-indigo-700">Top Match {{ job.match_score }}%</span>
+                    {% elif current_status == 'NEW' and job.match_score %}
+                    <span class="bg-gray-800 text-gray-400 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap border border-gray-700">{{ job.match_score }}% Match</span>
+                    {% endif %}
+                </div>
                 <p class="text-blue-400 font-semibold text-sm mb-3">{{ job.company }}</p>
                 
-                <div class="flex items-center text-xs text-gray-400 mb-3 space-x-3">
+                <div class="flex flex-wrap items-center text-xs text-gray-400 mb-3 gap-y-2 gap-x-3">
                     <div class="flex items-center"><i class="fa-solid fa-location-dot mr-1.5 opacity-70"></i>{{ job.location or 'Remote' }}</div>
                     {% if job.salary_display %}
                     <div class="flex items-center"><i class="fa-solid fa-sack-dollar mr-1.5 opacity-70"></i>{{ job.salary_display }}</div>
+                    {% endif %}
+                    {% if job.date_posted %}
+                    <div class="flex items-center"><i class="fa-solid fa-clock mr-1.5 opacity-70"></i>{{ job.date_posted.strftime('%b %d, %Y') }}</div>
                     {% endif %}
                 </div>
                 
