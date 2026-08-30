@@ -36,9 +36,16 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
                  .order_by(Job.date_posted.desc().nulls_last()).all()
         
         # Calculate match score
-        user_skills = []
+        user_skills = set()
         if profile and profile.skills:
-            user_skills = [s.name.lower() for s in profile.skills]
+            for s in profile.skills:
+                # Split by comma in case they have comma-separated lists
+                parts = [p.strip().lower() for p in s.name.split(',')]
+                for p in parts:
+                    if p:
+                        # Clean up parens if needed, but let's just use exact substring
+                        user_skills.add(p)
+        user_skills = list(user_skills)
             
         for job in jobs:
             if not user_skills:
@@ -47,8 +54,9 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
                 
             text_to_search = f"{job.title} {job.description}".lower() if job.description else (job.title or "").lower()
             matches = sum(1 for skill in user_skills if skill in text_to_search)
-            # Calculate a simple percentage score based on finding up to 10 relevant skills (or user's total skills)
-            max_skills_expected = min(len(user_skills), 15) # Assume finding 15 of their skills is a 100% match
+            
+            # Use max 15 skills as standard for 100%
+            max_skills_expected = min(len(user_skills), 15) 
             job.match_score = int(min((matches / max_skills_expected) * 100, 100)) if max_skills_expected > 0 else 0
             
         # Sort by match score descending, then by date posted
