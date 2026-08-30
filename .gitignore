@@ -8,3 +8,6 @@ playwright_profile/
 venv/
 node_modules/
 .gemini/
+
+# Logs
+logs/

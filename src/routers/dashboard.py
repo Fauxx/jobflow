@@ -39,6 +39,8 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
         "jobs": jobs,
         "counts": counts,
         "current_status": status,
+        "total_pages": 1,
+        "page": 1,
         "resume": {"name": profile.name if profile else "Not set"}
     }
     return templates.TemplateResponse(request=request, name="dashboard.html", context=context)

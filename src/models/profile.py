@@ -23,6 +23,8 @@ skill_evidence = Table(
 
 class UserProfile(Base):
     __tablename__ = "user_profiles"
+    name = Column(String, nullable=True)
+    title = Column(String, nullable=True)
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
     status = Column(Enum(ProfileStatus), default=ProfileStatus.DRAFT, nullable=False)

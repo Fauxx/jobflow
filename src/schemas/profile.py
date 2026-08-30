@@ -36,6 +36,8 @@ class ProfileExperience(ProfileExperienceBase):
         from_attributes = True
 
 class UserProfileBase(BaseModel):
+    name: Optional[str] = None
+    title: Optional[str] = None
     status: str
     career_goals: Optional[str] = None
     target_roles: Optional[str] = None
