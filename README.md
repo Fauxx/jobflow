@@ -1,81 +1,72 @@
-# Jobflow 🚀
-### Automated Local Job Application & Email Assistant
+# Jobflow
+*Your Personal Autonomous Job Pipeline & AI Resume Builder*
 
-Jobflow is a self-hosted, modular system designed to automate the painful parts of job hunting: discovering postings, scoring compatibility, tailoring cover letters, tracking application status, and emailing recruiters.
+Jobflow is a high-performance Python application designed to act as your personal recruitment pipeline. It completely automates the tedious parts of the job search process by securely scraping leads from multiple job boards, filtering out poor matches using your Master Profile, and dynamically writing highly-tailored PDF resumes for every single application.
 
-It runs locally on your machine via **Docker / Podman** and stores all data in a local **SQLite** database, keeping your resume and credentials private.
+## 🚀 Features
 
----
+- **Multi-Board JIT Scraping Engine**: Instantly pull hundreds of job leads from JobStreet, Kalibrr, and LinkedIn. Uses Just-In-Time (JIT) hydration to only download 3,000-word job descriptions exactly when you need them, bypassing IP bans and rate limits.
+- **Master Knowledge Base**: Store your entire career history—every project, bullet point, skill, and certification—in one centralized Master Profile database. 
+- **AI Match Scoring**: Automatically grades incoming job leads against your Master Profile skills to bubble up your best opportunities.
+- **Generative AI Resume Tailoring**: Connects to Google's Gemini AI to analyze a specific Job Description and intelligently extract the precise experiences, skills, and bullets from your Master Profile that best match the job. It even rewrites bullets for maximum ATS impact.
+- **Interactive Builder**: Review and manually edit the AI's suggestions in a sleek web UI. Add, remove, or modify experiences, projects, and skills.
+- **ATS-Optimized PDF Export**: Generates pixel-perfect, highly professional resumes using traditional executive fonts (Garamond/Georgia) directly to PDF via WeasyPrint.
 
-## 🏗️ Architecture & Flow
+## 🛠️ Architecture & Tech Stack
 
-Jobflow is designed around a **Human-in-the-Loop** model. Instead of fully automated bots applying blindly (which get blocked by firewalls or output incorrect information), Jobflow aggregates matching roles, scores them, drafts custom pitches, and presents them to you in a dashboard for approval before sending.
+- **Backend**: FastAPI (Python 3)
+- **Database**: PostgreSQL (via SQLAlchemy & Alembic) + SQLite (for local testing)
+- **AI Engine**: Google Gemini (v1beta API) using `gemini-3.6-flash` with robust fallback layers.
+- **Templating & UI**: Jinja2, TailwindCSS, FontAwesome.
+- **PDF Generation**: WeasyPrint.
+- **Scrapers**: Custom BeautifulSoup4 and HTTP request clients integrated into a `provider_registry`.
 
-```mermaid
-sequenceDiagram
-    participant S as Scraper Engine
-    participant DB as SQLite (jobflow.db)
-    participant UI as Dashboard Gateway
-    participant E as Email Engine
-
-    S->>DB: 1. Scrapes job listings & saves matching leads (status: NEW)
-    UI->>DB: 2. Fetches NEW jobs to show on dashboard
-    Note over UI: User reviews description,<br/>modifies AI-generated cover letter draft
-    UI->>E: 3. Click "Approve & Apply" -> sends tailored request
-    E->>E: 4. Attaches resume PDF & triggers SMTP
-    E->>DB: 5. Updates job status to APPLIED & records history
+## 📂 Project Structure
 ```
-
----
-
-## 📂 Project File Tree
-
-```text
 jobflow/
-├── .env                  # API keys, SMTP credentials (git-ignored)
-├── .gitignore            # Ignores .env, jobflow.db, and local caches
-├── docker-compose.yml    # Docker/Podman Compose orchestration
-├── Dockerfile            # Container definition (Python + Playwright/Chromium)
-├── README.md             # Project documentation (this file)
-├── requirements.txt      # Python dependencies
-├── templates/
-│   └── cover_letter.md   # Customizable base email templates
-└── src/
-    ├── __init__.py
-    ├── config.py         # Loads and validates environment variables
-    ├── db.py             # SQLite setup, job insertions, status updates
-    ├── email_engine.py   # Merges templates, attaches PDF, sends email
-    ├── scraper.py        # Web/API scraper to pull target job matches
-    └── app.py            # Local FastAPI server (serves the Gateway UI)
+├── src/
+│   ├── core/           # Configs, DB sessions, Auth dependencies
+│   ├── models/         # SQLAlchemy ORM definitions (User, Job, Profile, Resume)
+│   ├── routers/        # FastAPI Endpoints (Dashboard, Jobs, Resumes, Scraper)
+│   ├── schemas/        # Pydantic validation models
+│   ├── scrapers/       # Multi-platform job board scraping logic
+│   └── services/       # Core business logic (Ingestion, AI Context Builder, Resume Tailor)
+├── static/             # Static assets (CSS/JS)
+├── templates/          # Jinja2 HTML Templates (UI, Builder, Dashboard, PDF Layouts)
+└── README.md
 ```
 
----
+## ⚙️ Getting Started
 
-## ⚙️ Components Description
-
-1. **Scraper Engine (`src/scraper.py`):**
-   * Uses APIs or lightweight scraping to pull roles matching keywords (e.g. `DevOps`, `Cloud Engineer`, `SRE`).
-   * Deduplicates entries against the local SQLite database.
-2. **Dashboard Gateway UI (`src/app.py` & templates):**
-   * A FastAPI web server providing a local UI (`http://localhost:8000`).
-   * Displays matching jobs, highlights requirements, and displays a pre-drafted cover letter.
-   * Features a simple "Apply" button to trigger the Email Engine.
-3. **Email Delivery Engine (`src/email_engine.py`):**
-   * Connects via secure SMTP (Gmail/Outlook App Passwords) or provider APIs.
-   * Generates multipart emails attaching `Zet_Donaue_Samson_Resume.pdf`.
-
----
-
-## 🚀 Setup & Local Execution
-
-### Prerequisites
-* Fedora Linux with **Podman** (emulating Docker)
-* An SMTP email account or API credentials
-
-### Run System
-1. Copy `.env.example` to `.env` and fill out your SMTP credentials.
-2. Start the services using Docker Compose:
-   ```bash
-   podman-compose up --build
+1. **Environment Setup:**
+   Create a `.env` file in the root directory:
+   ```env
+   DATABASE_URL="postgresql://user:pass@localhost:5432/jobflow"
+   GEMINI_API_KEY="your_google_gemini_api_key"
+   ADMIN_PASSWORD="your_secure_password"
+   SECRET_KEY="your_jwt_secret"
    ```
-3. Open your browser and navigate to `http://localhost:8000`.
+
+2. **Installation:**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. **Database Migration:**
+   ```bash
+   alembic upgrade head
+   ```
+
+4. **Run the Application:**
+   ```bash
+   uvicorn src.main:app --reload --port 8000
+   ```
+   Open `http://localhost:8000` in your browser. Default login relies on the `ADMIN_PASSWORD` defined in your `.env`.
+
+## 🔄 The Pipeline Workflow
+1. **Scrape**: Enter keywords/location on the dashboard to pull in `NEW` leads.
+2. **Filter**: Use the built-in Match Score and keyword filters to flush out bad leads into the `SKIPPED` bin.
+3. **Approve**: Click "Approve & Tailor" on a good lead. The JIT engine downloads the full JD, and Gemini writes your resume.
+4. **Build & Export**: Edit the AI suggestions in the Builder. Click "Save & Download PDF" when ready!
