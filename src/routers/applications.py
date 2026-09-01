@@ -98,7 +98,7 @@ async def builder_page(request: Request, job_id: int, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Job not found")
         
     # JIT Hydration: Fetch full description if missing before rendering/tailoring
-    job = IngestionService.hydrate_job(db, job)
+    IngestionService.hydrate_job(db, job)
 
     # Get or create application
     app = db.query(Application).filter(
@@ -142,7 +142,7 @@ async def generate_resume(job_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Job not found")
         
     # JIT Hydration: Fetch full description if missing before rendering/tailoring
-    job = IngestionService.hydrate_job(db, job)
+    IngestionService.hydrate_job(db, job)
 
     # Generate tailored resume
     result = ResumeTailorService.generate_tailored_resume(db, job, user.id)

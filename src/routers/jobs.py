@@ -73,5 +73,5 @@ async def get_job_details(job_id: int, db: Session = Depends(get_db)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
         
-    job = IngestionService.hydrate_job(db, job)
+    IngestionService.hydrate_job(db, job)
     return {"description": job.description or "No description available."}
