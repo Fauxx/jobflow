@@ -128,6 +128,11 @@
                     <i class="fa-solid fa-broom mr-1"></i> Clear Unfiltered
                 </button>
                 {% endif %}
+                {% if current_status == 'SKIPPED' and jobs|length > 0 %}
+                <button onclick="emptyTrash()" class="bg-gray-800 hover:bg-red-900 border border-gray-700 hover:border-red-600 text-red-500 hover:text-white text-xs font-bold py-1.5 px-3 rounded-lg transition" title="Permanently delete all SKIPPED jobs">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Empty Trash
+                </button>
+                {% endif %}
             </div>
         </div>
 
@@ -318,6 +323,13 @@
         }
 
 
+
+        async function emptyTrash() {
+            if (!confirm("Are you sure you want to PERMANENTLY delete all SKIPPED jobs from the database? This cannot be undone.")) return;
+            
+            await fetch('/applications/empty_trash', { method: 'POST' });
+            window.location.reload();
+        }
 
         async function clearPipeline() {
             if (!confirm("Are you sure you want to skip all CURRENTLY VISIBLE jobs in your pipeline?")) return;

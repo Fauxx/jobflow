@@ -37,7 +37,6 @@ class ResumeUpdate(BaseModel):
     experiences: list
     projects: list
     certifications: list = []
-    education: list = []
 
 
 # ─── Status Management ───
@@ -293,3 +292,21 @@ async def download_docx(job_id: int, db: Session = Depends(get_db)):
         tmp_docx, filename=filename,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
+
+@router.post("/empty_trash")
+async def empty_trash(db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    
+    # Find all skipped applications
+    skipped_apps = db.query(Application).filter(Application.user_id == user.id, Application.status == "SKIPPED").all()
+    job_ids = [app.job_id for app in skipped_apps]
+    
+    # Delete applications
+    db.query(Application).filter(Application.id.in_([a.id for a in skipped_apps])).delete(synchronize_session=False)
+    
+    # Delete the underlying jobs if they are no longer referenced (for safety, delete all job_ids we just found, assuming 1:1)
+    if job_ids:
+        db.query(Job).filter(Job.id.in_(job_ids)).delete(synchronize_session=False)
+        
+    db.commit()
+    return {"status": "success", "deleted": len(job_ids)}

@@ -174,18 +174,19 @@
                     <button onclick="addCertificationCard('')" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Certification</button>
                 </div>
 
-                <!-- EDUCATION -->
-                <div class="section-card bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-4" id="section-education">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-sm font-bold text-gray-300 uppercase tracking-widest"><i class="fa-solid fa-graduation-cap text-blue-500 mr-2"></i>Education</h3>
-                        <button onclick="toggleApprove('education')" class="approve-btn text-xs px-3 py-1 rounded-lg border border-gray-700 bg-gray-800 text-gray-400 hover:bg-green-600 hover:text-white hover:border-green-600 transition font-bold">
-                            <i class="fa-solid fa-check mr-1"></i> Approve
-                        </button>
+                <!-- EDUCATION (auto from profile) -->
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-4">
+                    <h3 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3"><i class="fa-solid fa-graduation-cap text-blue-500 mr-2"></i>Education</h3>
+                    <div class="text-sm text-gray-300">
+                        {% if profile and profile.education %}
+                            {% for edu in profile.education %}
+                            <p class="mb-1"><strong>{{ edu.degree }}</strong> — {{ edu.institution }} ({{ edu.date_str or '' }})</p>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-gray-500 italic text-xs">Add education in your Master Profile.</p>
+                        {% endif %}
                     </div>
-                    <div id="education-container" class="space-y-4">
-                        <!-- Populated by JS -->
-                    </div>
-                    <button onclick="addEducationCard({})" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Education</button>
+                    <p class="text-xs text-gray-600 italic mt-2">Auto-filled from Master Profile</p>
                 </div>
             </div>
         </div>
@@ -485,16 +486,6 @@
                 });
             });
 
-            const education = [];
-            document.querySelectorAll('.edu-card').forEach(card => {
-                education.push({
-                    degree: card.querySelector('.edu-degree')?.value || '',
-                    institution: card.querySelector('.edu-inst')?.value || '',
-                    date_str: card.querySelector('.edu-date')?.value || '',
-                    location: card.querySelector('.edu-loc')?.value || ''
-                });
-            });
-
             const certifications = [];
             document.querySelectorAll('.cert-card').forEach(card => {
                 const val = card.querySelector('.cert-input').value.trim();
@@ -506,8 +497,7 @@
                 skills,
                 experiences,
                 projects,
-                certifications,
-                education
+                certifications
             };
         }
 
