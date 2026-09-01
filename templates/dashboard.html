@@ -235,27 +235,23 @@
         </div>
     </div>
     
-    <!-- Scraper Modal Overlay -->
+    <!-- Import Modal -->
     <div id="scrape-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-            <h3 class="text-xl font-bold text-white mb-2">Scrape Jobs</h3>
-            <p class="text-sm text-gray-400 mb-5">Search LinkedIn and Indeed for new leads.</p>
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md relative">
+            <h2 class="text-xl font-black text-white mb-2"><i class="fa-solid fa-link text-blue-500 mr-2"></i>Import Job URL</h2>
+            <p class="text-gray-400 text-sm mb-5">Paste a link to any job posting (LinkedIn, JobStreet, Workday, Greenhouse, etc.). Gemini AI will magically read the page and extract the details.</p>
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Keywords</label>
-                    <input type="text" id="scrape-keywords" placeholder="e.g. Python Developer" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Location</label>
-                    <input type="text" id="scrape-location" placeholder="e.g. Remote, Manila, etc." class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Job URL</label>
+                    <input type="url" id="scrape-url" placeholder="https://..." class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
                 </div>
             </div>
             
             <div class="flex justify-end space-x-3 mt-6">
                 <button onclick="document.getElementById('scrape-modal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-gray-400 hover:text-white text-sm font-bold transition">Cancel</button>
                 <button onclick="executeScrape()" id="execute-scrape-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
-                    <i class="fa-solid fa-radar-pro"></i><span>Start Scraper</span>
+                    <i class="fa-solid fa-wand-magic-sparkles"></i><span>Extract & Import</span>
                 </button>
             </div>
         </div>
@@ -278,48 +274,39 @@
         }
 
         function runScraper() {
-            const kw = localStorage.getItem('last-scrape-kw') || '';
-            const loc = localStorage.getItem('last-scrape-loc') || '';
-            
-            if (kw) document.getElementById('scrape-keywords').value = kw;
-            if (loc) document.getElementById('scrape-location').value = loc;
-            
             document.getElementById('scrape-modal').classList.remove('hidden');
         }
 
         async function executeScrape() {
+            const url = document.getElementById('scrape-url').value;
+            if (!url) {
+                alert("Please enter a valid URL.");
+                return;
+            }
+
             const btn = document.getElementById('execute-scrape-btn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Scraping...</span>';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>AI reading page...</span>';
             btn.disabled = true;
-            
-            const kw = document.getElementById('scrape-keywords').value;
-            const loc = document.getElementById('scrape-location').value;
-            
-            localStorage.setItem('last-scrape-kw', kw);
-            localStorage.setItem('last-scrape-loc', loc);
-            
+
             try {
-                const formData = new FormData();
-                formData.append('keywords', kw);
-                formData.append('location', loc);
-                
-                const res = await fetch('/scrape', { 
+                const res = await fetch('/scrape', {
                     method: 'POST',
-                    body: formData
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ url })
                 });
                 
-                if (!res.ok) throw new Error('Scrape failed');
-                
-                const data = await res.json();
-                alert(`Scraping complete!`);
-                window.location.reload();
+                if(res.ok) {
+                    window.location.reload();
+                } else {
+                    const data = await res.json();
+                    alert("Import failed: " + (data.detail || "Could not extract job."));
+                }
             } catch (e) {
-                alert("Scraping failed.");
+                alert("Network error occurred.");
             }
             
-            btn.innerHTML = '<i class="fa-solid fa-radar-pro"></i><span>Start Scraper</span>';
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i><span>Extract & Import</span>';
             btn.disabled = false;
-            document.getElementById('scrape-modal').classList.add('hidden');
         }
 
 
