@@ -7,7 +7,7 @@ from src.models.application import Application
 from pydantic import BaseModel
 from typing import Optional
 import datetime
-from src.services.ingestion import IngestionService
+from src.services.ingestion import UniversalScraperService as IngestionService
 from src.core.dependencies import get_current_user
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])

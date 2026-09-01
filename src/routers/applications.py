@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
-from src.services.ingestion import IngestionService
+from src.services.ingestion import UniversalScraperService as IngestionService
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from pydantic import BaseModel
 from typing import List, Optional
