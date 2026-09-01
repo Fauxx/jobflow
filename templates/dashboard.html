@@ -83,7 +83,11 @@
         <!-- Job List -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="job-grid">
             {% for job in jobs %}
-            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition shadow-lg flex flex-col" id="job-card-{{ job.id }}">
+            <div class="job-card-item bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition shadow-lg flex flex-col" 
+                 id="job-card-{{ job.id }}"
+                 data-source="{{ job.source|lower }}"
+                 data-date="{{ job.date_posted.isoformat() if job.date_posted else '' }}"
+                 data-score="{{ job.match_score|default(0) }}">
                 <div class="flex justify-between items-start mb-3">
                     <div class="text-xs font-bold px-2 py-1 bg-gray-800 rounded text-gray-400 uppercase tracking-wider flex items-center">
                         {% if 'linkedin' in job.source.lower() %}<i class="fa-brands fa-linkedin text-blue-500 mr-1.5"></i>
@@ -187,30 +191,6 @@
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Location</label>
                     <input type="text" id="scrape-location" placeholder="e.g. Remote, Manila, etc." class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
                 </div>
-                <div class="flex space-x-4">
-                    <div class="flex-1">
-                        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Date Posted</label>
-                        <select id="scrape-date" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
-                            <option value="Any Time">Any Time</option>
-                            <option value="Last 24 Hours">Last 24 Hours</option>
-                            <option value="Last 3 Days">Last 3 Days</option>
-                            <option value="Last 7 Days">Last 7 Days</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-2">Sources</label>
-                    <div class="flex space-x-4">
-                        <label class="flex items-center space-x-2 text-sm text-gray-300 cursor-pointer">
-                            <input type="checkbox" value="jobstreet" class="scrape-provider rounded bg-gray-800 border-gray-700 text-blue-500 focus:ring-0" checked>
-                            <span>JobStreet</span>
-                        </label>
-                        <label class="flex items-center space-x-2 text-sm text-gray-300 cursor-pointer">
-                            <input type="checkbox" value="kalibrr" class="scrape-provider rounded bg-gray-800 border-gray-700 text-blue-500 focus:ring-0" checked>
-                            <span>Kalibrr</span>
-                        </label>
-                    </div>
-                </div>
             </div>
             
             <div class="flex justify-end space-x-3 mt-6">
@@ -231,21 +211,11 @@
         }
 
         function runScraper() {
-            const kw = localStorage.getItem('last-scrape-kw') || 'DevOps Engineer';
-            const loc = localStorage.getItem('last-scrape-loc') || 'Remote';
-            const dateF = localStorage.getItem('last-scrape-date') || 'Any Time';
+            const kw = localStorage.getItem('last-scrape-kw') || '';
+            const loc = localStorage.getItem('last-scrape-loc') || '';
             
-            document.getElementById('scrape-keywords').value = kw;
-            document.getElementById('scrape-location').value = loc;
-            document.getElementById('scrape-date').value = dateF;
-            
-            const savedProviders = localStorage.getItem('last-scrape-providers');
-            if (savedProviders) {
-                const pArr = savedProviders.split(',');
-                document.querySelectorAll('.scrape-provider').forEach(cb => {
-                    cb.checked = pArr.includes(cb.value);
-                });
-            }
+            if (kw) document.getElementById('scrape-keywords').value = kw;
+            if (loc) document.getElementById('scrape-location').value = loc;
             
             document.getElementById('scrape-modal').classList.remove('hidden');
         }
@@ -257,21 +227,14 @@
             
             const kw = document.getElementById('scrape-keywords').value;
             const loc = document.getElementById('scrape-location').value;
-            const dateF = document.getElementById('scrape-date').value;
-            
-            const providers = Array.from(document.querySelectorAll('.scrape-provider:checked')).map(cb => cb.value).join(',');
             
             localStorage.setItem('last-scrape-kw', kw);
             localStorage.setItem('last-scrape-loc', loc);
-            localStorage.setItem('last-scrape-date', dateF);
-            localStorage.setItem('last-scrape-providers', providers);
             
             try {
                 const formData = new FormData();
                 formData.append('keywords', kw);
                 formData.append('location', loc);
-                formData.append('date_filter', dateF);
-                formData.append('providers', providers);
                 
                 const res = await fetch('/scrape', { 
                     method: 'POST',
@@ -290,6 +253,56 @@
             btn.innerHTML = '<i class="fa-solid fa-radar-pro"></i><span>Start Scraper</span>';
             btn.disabled = false;
             document.getElementById('scrape-modal').classList.add('hidden');
+        }
+
+
+        function applyFilters() {
+            const sourceFilter = document.getElementById('filter-source').value;
+            const dateFilter = document.getElementById('filter-date').value;
+            const scoreFilter = document.getElementById('filter-score') ? parseInt(document.getElementById('filter-score').value) : 0;
+            
+            const now = new Date();
+            let visibleCount = 0;
+            
+            document.querySelectorAll('.job-card-item').forEach(card => {
+                const source = card.getAttribute('data-source');
+                const dateStr = card.getAttribute('data-date');
+                const score = parseInt(card.getAttribute('data-score') || 0);
+                
+                let show = true;
+                
+                // Filter by Source
+                if (sourceFilter !== 'all' && !source.includes(sourceFilter)) {
+                    show = false;
+                }
+                
+                // Filter by Score
+                if (scoreFilter > 0 && score < scoreFilter) {
+                    show = false;
+                }
+                
+                // Filter by Date
+                if (show && dateFilter !== 'any') {
+                    if (!dateStr) {
+                        show = false;
+                    } else {
+                        const jobDate = new Date(dateStr);
+                        const diffHours = (now - jobDate) / (1000 * 60 * 60);
+                        if (dateFilter === '24h' && diffHours > 24) show = false;
+                        if (dateFilter === '3d' && diffHours > 72) show = false;
+                        if (dateFilter === '7d' && diffHours > 168) show = false;
+                    }
+                }
+                
+                if (show) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('visible-count').innerText = visibleCount;
         }
 
         async function updateStatus(jobId, status) {

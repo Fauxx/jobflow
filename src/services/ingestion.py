@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 class IngestionService:
     @staticmethod
-    def ingest_from_provider(db: Session, provider_name: str, keywords: str, location: str, date_filter: str = "Any Time", fetch_details: bool = True) -> List[Dict[str, Any]]:
+    def ingest_from_provider(db: Session, provider_name: str, keywords: str, location: str, fetch_details: bool = True) -> List[Dict[str, Any]]:
         scraper_class = provider_registry.get(provider_name)
         scraper = scraper_class()
         
@@ -19,25 +19,8 @@ class IngestionService:
             print(f"Skipping {provider_name}: {e}")
             return []
             
-        # Determine date threshold
-        threshold_date = None
-        now = datetime.now(timezone.utc)
-        if date_filter == "Last 24 Hours":
-            threshold_date = now - timedelta(days=1)
-        elif date_filter == "Last 3 Days":
-            threshold_date = now - timedelta(days=3)
-        elif date_filter == "Last 7 Days":
-            threshold_date = now - timedelta(days=7)
-
         ephemeral_jobs = []
         for cj in jobs:
-            # Filter by date if applicable
-            if threshold_date and cj.date_posted:
-                # Ensure cj.date_posted is aware for comparison
-                cj_date = cj.date_posted if cj.date_posted.tzinfo else cj.date_posted.replace(tzinfo=timezone.utc)
-                if cj_date < threshold_date:
-                    continue
-
             # Check duplicates (if it's in the DB, skip it)
             if DeduplicationService.is_duplicate(db, cj.source, cj.external_job_id, cj.source_url):
                 continue
@@ -96,14 +79,10 @@ class IngestionService:
         return ephemeral_jobs
         
     @staticmethod
-    def ingest_all(db: Session, keywords: str, location: str, providers: List[str] = None, date_filter: str = "Any Time") -> dict:
+    def ingest_all(db: Session, keywords: str, location: str) -> dict:
         results = {"status": "success", "counts": {}, "jobs": []}
-        
-        all_providers = list(provider_registry.get_all().keys())
-        target_providers = [p for p in providers if p in all_providers] if providers else all_providers
-        
-        for provider_name in target_providers:
-            jobs_from_provider = IngestionService.ingest_from_provider(db, provider_name, keywords, location, date_filter)
+        for provider_name in provider_registry.get_all().keys():
+            jobs_from_provider = IngestionService.ingest_from_provider(db, provider_name, keywords, location)
             results["counts"][provider_name] = len(jobs_from_provider)
             results["jobs"].extend(jobs_from_provider)
         return results
