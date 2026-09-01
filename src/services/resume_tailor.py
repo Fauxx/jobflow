@@ -99,9 +99,7 @@ Generate a tailored resume for THIS specific job. Return JSON with this exact st
 {{
   "summary": "A 3-4 sentence professional summary tailored to this job. Use keywords from the JD naturally. Reference the candidate's most relevant experience.",
   
-  "skills": [
-    {{"category": "Category Name", "skills": ["Skill1", "Skill2"]}}
-  ],
+  "skills": ["Skill1", "Skill2", "Skill3"],
   
   "experiences": [
     {{
