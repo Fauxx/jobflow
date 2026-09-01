@@ -36,10 +36,6 @@
         ul.bullets { padding-left: 18pt; margin-bottom: 5pt; margin-top: 1pt; }
         ul.bullets li { font-size: 8.5pt; margin-bottom: 2.5pt; text-align: justify; padding-left: 2pt; }
         
-        /* Skills as a clean bulleted list */
-        .skills-list { padding-left: 18pt; margin-bottom: 5pt; }
-        .skills-list li { font-size: 8.5pt; margin-bottom: 1.5pt; }
-        .skills-list strong { font-weight: 700; color: #000; }
         
         @media print {
             body { -webkit-print-color-adjust: exact; }
@@ -70,11 +66,9 @@
     {% if resume.skills %}
     <div class="section">
         <div class="section-title">Technical Skills</div>
-        <ul class="skills-list">
-            {% for cat in resume.skills %}
-            <li><strong>{{ cat.category }}:</strong> {{ cat.skills | join(', ') }}</li>
-            {% endfor %}
-        </ul>
+        <div style="font-size: 8.5pt; text-align: justify; line-height: 1.5;">
+            {{ resume.skills | join(' &nbsp;&bull;&nbsp; ') | safe }}
+        </div>
     </div>
     {% endif %}
 

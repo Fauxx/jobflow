@@ -37,15 +37,10 @@ class TailoredProject(BaseModel):
     bullets: List[TailoredBullet] = []
 
 
-class SkillCategory(BaseModel):
-    category: str
-    skills: List[str]
-
-
 class TailoredResume(BaseModel):
     """The full AI-suggested resume. Every field is a suggestion the user can edit."""
     summary: str = Field(description="AI-written professional summary tailored to this job")
-    skills: List[SkillCategory] = Field(description="Skills grouped by category, prioritized by JD relevance")
+    skills: List[str] = Field(description="A flat list of the most relevant skills for this job")
     experiences: List[TailoredExperience] = Field(description="Selected experiences with tailored bullets")
     projects: List[TailoredProject] = Field(description="Selected projects relevant to this job")
     certifications: List[str] = Field(default_factory=list)
@@ -148,7 +143,7 @@ IMPORTANT:
 - Generate comprehensive suggestions. The user will manually trim them in the UI.
 - Select all highly relevant experiences and projects.
 - For each experience, pick 4-6 strong, tailored bullets.
-- Skills should be grouped logically and ordered by JD relevance.
+- Output a single, flat list of the most relevant skills.
 - Every tailored_text must have a corresponding real original_text from the profile.
 """
 
