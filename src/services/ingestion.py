@@ -92,8 +92,8 @@ EXPECTED JSON SCHEMA:
             location=data.get("location", "Unspecified"),
             description=data.get("description", ""),
             source=domain,
-            external_url=url,
-            is_hydrated=True  # We fetched full JD immediately
+            source_url=url
+            
         )
         
         db.add(new_job)
@@ -104,14 +104,14 @@ EXPECTED JSON SCHEMA:
 
     @staticmethod
     def hydrate_job(db: Session, job: Job):
-        if job.is_hydrated:
+        if job.description and len(job.description) > 500:
             return
             
-        if not job.external_url:
+        if not job.source_url:
             return
             
         # Re-fetch full JD via Universal Scraper
-        raw_text = UniversalScraperService.extract_text_from_url(job.external_url)
+        raw_text = UniversalScraperService.extract_text_from_url(job.source_url)
         if not raw_text: return
         
         prompt = f"""Extract ONLY the full job description from this raw web text. Return raw JSON: {{"description": "full markdown here"}}. Raw text:\n{raw_text}"""
@@ -122,7 +122,7 @@ EXPECTED JSON SCHEMA:
             data = json.loads(ai_resp)
             if data.get("description"):
                 job.description = data["description"]
-                job.is_hydrated = True
+                
                 db.commit()
         except Exception:
             pass
