@@ -26,48 +26,46 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
         counts[st] = count
 
     # Fetch jobs for the selected status
+    from sqlalchemy.orm import outerjoin, selectinload
+    profile = db.query(UserProfile).options(selectinload(UserProfile.skills)).filter(UserProfile.user_id == user.id).first()
+    
     if status == "NEW":
-        # Jobs that have no application for this user, or application status is NEW
-        from sqlalchemy.orm import outerjoin, selectinload
-        profile = db.query(UserProfile).options(selectinload(UserProfile.skills)).filter(UserProfile.user_id == user.id).first()
-        
         jobs = db.query(Job).outerjoin(Application, (Job.id == Application.job_id) & (Application.user_id == user.id))\
                  .filter((Application.id == None) | (Application.status == "NEW"))\
                  .order_by(Job.date_posted.desc().nulls_last()).all()
-        
-        # Calculate match score
-        user_skills = set()
-        if profile and profile.skills:
-            for s in profile.skills:
-                # Split by comma in case they have comma-separated lists
-                parts = [p.strip().lower() for p in s.name.split(',')]
-                for p in parts:
-                    if p:
-                        # Clean up parens if needed, but let's just use exact substring
-                        user_skills.add(p)
-        user_skills = list(user_skills)
-            
-        for job in jobs:
-            if not user_skills:
-                job.match_score = 0
-                continue
-                
-            text_to_search = f"{job.title} {job.description}".lower() if job.description else (job.title or "").lower()
-            matches = sum(1 for skill in user_skills if skill in text_to_search)
-            
-            # Use max 15 skills as standard for 100%
-            max_skills_expected = min(len(user_skills), 15) 
-            job.match_score = int(min((matches / max_skills_expected) * 100, 100)) if max_skills_expected > 0 else 0
-            
-        # Sort by match score descending, then by date posted
-        import datetime
-        jobs.sort(key=lambda j: (j.match_score, j.date_posted.timestamp() if j.date_posted else 0), reverse=True)
-        counts["NEW"] = len(jobs)
     else:
         jobs = db.query(Job).join(Application).filter(
             Application.user_id == user.id,
             Application.status == status
         ).order_by(Job.date_posted.desc().nulls_last()).all()
+
+    # Calculate match score for ALL jobs regardless of tab
+    user_skills = set()
+    if profile and profile.skills:
+        for s in profile.skills:
+            parts = [p.strip().lower() for p in s.name.split(',')]
+            for p in parts:
+                if p:
+                    user_skills.add(p)
+    user_skills = list(user_skills)
+        
+    for job in jobs:
+        if not user_skills:
+            job.match_score = 0
+            continue
+            
+        text_to_search = f"{job.title} {job.description}".lower() if job.description else (job.title or "").lower()
+        matches = sum(1 for skill in user_skills if skill in text_to_search)
+        
+        max_skills_expected = min(len(user_skills), 15) 
+        job.match_score = int(min((matches / max_skills_expected) * 100, 100)) if max_skills_expected > 0 else 0
+
+    if status == "NEW":
+        import datetime
+        jobs.sort(key=lambda j: (j.match_score, j.date_posted.timestamp() if j.date_posted else 0), reverse=True)
+        counts["NEW"] = len(jobs)
+    elif status == "APPROVED":
+        jobs.sort(key=lambda j: j.match_score, reverse=True)
 
     context = {
         "request": request,
