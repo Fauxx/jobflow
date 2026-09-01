@@ -144,6 +144,7 @@
                     <div id="experience-container" class="space-y-4">
                         <p class="text-xs text-gray-500 italic">AI will select and tailor your most relevant experiences...</p>
                     </div>
+                    <button onclick="addExperienceCard({})" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Experience</button>
                 </div>
 
                 <!-- PROJECTS -->
@@ -327,11 +328,14 @@
             });
 
             card.innerHTML = `
+                <div class="flex justify-end mb-1">
+                    <button onclick="this.closest('.exp-card').remove()" class="text-red-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-wider"><i class="fa-solid fa-trash mr-1"></i>Remove</button>
+                </div>
                 <div class="grid grid-cols-3 gap-2">
                     <input type="text" value="${exp.title || ''}" placeholder="Job Title" class="col-span-2 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs font-bold exp-title focus:outline-none focus:border-blue-500">
                     <input type="text" value="${exp.date_range || ''}" placeholder="Date Range" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs exp-dates focus:outline-none focus:border-blue-500">
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-2 mt-2">
                     <input type="text" value="${exp.company || ''}" placeholder="Company" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs font-semibold exp-company focus:outline-none focus:border-blue-500">
                     <input type="text" value="${exp.location || ''}" placeholder="Location" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs exp-location focus:outline-none focus:border-blue-500">
                 </div>
