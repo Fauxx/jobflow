@@ -37,6 +37,7 @@ class ResumeUpdate(BaseModel):
     experiences: list
     projects: list
     certifications: list = []
+    education: list = []
 
 
 # ─── Status Management ───

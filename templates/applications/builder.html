@@ -168,25 +168,24 @@
                             <i class="fa-solid fa-check mr-1"></i> Approve
                         </button>
                     </div>
-                    <div id="certs-container">
-                        <textarea id="field-certs" rows="2" placeholder="One certification per line..."
-                            class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition resize-none"></textarea>
+                    <div id="certs-container" class="space-y-3">
+                        <!-- Populated by JS -->
                     </div>
+                    <button onclick="addCertificationCard('')" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Certification</button>
                 </div>
 
-                <!-- EDUCATION (auto from profile) -->
-                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-4">
-                    <h3 class="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3"><i class="fa-solid fa-graduation-cap text-blue-500 mr-2"></i>Education</h3>
-                    <div class="text-sm text-gray-300">
-                        {% if profile and profile.education %}
-                            {% for edu in profile.education %}
-                            <p class="mb-1"><strong>{{ edu.degree }}</strong> — {{ edu.institution }} ({{ edu.date_str or '' }})</p>
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-gray-500 italic text-xs">Add education in your Master Profile.</p>
-                        {% endif %}
+                <!-- EDUCATION -->
+                <div class="section-card bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-4" id="section-education">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-bold text-gray-300 uppercase tracking-widest"><i class="fa-solid fa-graduation-cap text-blue-500 mr-2"></i>Education</h3>
+                        <button onclick="toggleApprove('education')" class="approve-btn text-xs px-3 py-1 rounded-lg border border-gray-700 bg-gray-800 text-gray-400 hover:bg-green-600 hover:text-white hover:border-green-600 transition font-bold">
+                            <i class="fa-solid fa-check mr-1"></i> Approve
+                        </button>
                     </div>
-                    <p class="text-xs text-gray-600 italic mt-2">Auto-filled from Master Profile</p>
+                    <div id="education-container" class="space-y-4">
+                        <!-- Populated by JS -->
+                    </div>
+                    <button onclick="addEducationCard({})" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Education</button>
                 </div>
             </div>
         </div>
@@ -228,6 +227,18 @@
     </div>
 
     <script>
+        window.profileEducation = [
+            {% if profile and profile.education %}
+                {% for edu in profile.education %}
+                {
+                    degree: "{{ edu.degree|replace('"', '\"') }}",
+                    institution: "{{ edu.institution|replace('"', '\"') }}",
+                    date_str: "{{ edu.date_str|replace('"', '\"') }}",
+                    location: "{{ edu.location|replace('"', '\"') }}"
+                },
+                {% endfor %}
+            {% endif %}
+        ];
         const jobId = {{ job.id }};
         const approvedSections = {};
 
@@ -384,6 +395,38 @@
         }
 
         // ─── Add Bullet to Card ───
+
+        function addEducationCard(edu) {
+            const container = document.getElementById('education-container');
+            const card = document.createElement('div');
+            card.className = 'edu-card bg-gray-950 border border-gray-800 rounded-xl p-4 space-y-2 relative';
+            card.innerHTML = `
+                <div class="flex justify-end mb-1">
+                    <button onclick="this.closest('.edu-card').remove()" class="text-red-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-wider"><i class="fa-solid fa-trash mr-1"></i>Remove</button>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" value="${edu.degree || ''}" placeholder="Degree/Major" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs font-bold edu-degree focus:outline-none focus:border-blue-500">
+                    <input type="text" value="${edu.date_str || ''}" placeholder="Date Range" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs edu-date focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <input type="text" value="${edu.institution || ''}" placeholder="Institution" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs edu-inst focus:outline-none focus:border-blue-500">
+                    <input type="text" value="${edu.location || ''}" placeholder="Location" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs edu-loc focus:outline-none focus:border-blue-500">
+                </div>
+            `;
+            container.appendChild(card);
+        }
+
+        function addCertificationCard(cert) {
+            const container = document.getElementById('certs-container');
+            const card = document.createElement('div');
+            card.className = 'cert-card flex items-center space-x-2';
+            card.innerHTML = `
+                <input type="text" value="${cert || ''}" placeholder="Certification Name" class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs cert-input focus:outline-none focus:border-blue-500">
+                <button onclick="this.closest('.cert-card').remove()" class="text-red-400 hover:text-red-300 px-2"><i class="fa-solid fa-trash"></i></button>
+            `;
+            container.appendChild(card);
+        }
+
         function addBulletToCard(card, prefix) {
             const container = card.querySelector(`.${prefix}-bullets-container`);
             const row = document.createElement('div');
@@ -442,12 +485,29 @@
                 });
             });
 
+            const education = [];
+            document.querySelectorAll('.edu-card').forEach(card => {
+                education.push({
+                    degree: card.querySelector('.edu-degree')?.value || '',
+                    institution: card.querySelector('.edu-inst')?.value || '',
+                    date_str: card.querySelector('.edu-date')?.value || '',
+                    location: card.querySelector('.edu-loc')?.value || ''
+                });
+            });
+
+            const certifications = [];
+            document.querySelectorAll('.cert-card').forEach(card => {
+                const val = card.querySelector('.cert-input').value.trim();
+                if (val) certifications.push(val);
+            });
+
             return {
                 summary: document.getElementById('field-summary').value,
                 skills,
                 experiences,
                 projects,
-                certifications: document.getElementById('field-certs').value.split('\n').filter(c => c.trim())
+                certifications,
+                education
             };
         }
 
