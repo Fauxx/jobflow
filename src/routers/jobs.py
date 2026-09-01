@@ -7,6 +7,7 @@ from src.models.application import Application
 from pydantic import BaseModel
 from typing import Optional
 import datetime
+from src.services.ingestion import IngestionService
 from src.core.dependencies import get_current_user
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -65,3 +66,12 @@ async def update_status(job_id: int, request: Request, status: str = Form(...), 
     db.commit()
     return RedirectResponse(url="/", status_code=303)
 
+
+@router.get("/{job_id}/details")
+async def get_job_details(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    job = IngestionService.hydrate_job(db, job)
+    return {"description": job.description or "No description available."}

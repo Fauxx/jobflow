@@ -206,11 +206,19 @@
     </div>
 
     <script>
-        function showJobDescription(jobId, title) {
-            const desc = document.getElementById(`full-desc-${jobId}`).innerHTML;
+        async function showJobDescription(jobId, title) {
+            const modalContent = document.getElementById('jd-modal-content');
             document.getElementById('jd-modal-title').innerText = title;
-            document.getElementById('jd-modal-content').innerHTML = desc;
+            modalContent.innerHTML = '<div class="flex flex-col items-center justify-center py-20 text-blue-500"><i class="fa-solid fa-spinner fa-spin text-4xl mb-4"></i><p class="text-sm font-bold animate-pulse text-gray-400">Securely fetching full description...</p></div>';
             document.getElementById('jd-modal').classList.remove('hidden');
+            
+            try {
+                const res = await fetch(`/jobs/${jobId}/details`);
+                const data = await res.json();
+                modalContent.innerHTML = data.description || 'No description available.';
+            } catch (e) {
+                modalContent.innerHTML = 'Error loading job description.';
+            }
         }
 
         function runScraper() {

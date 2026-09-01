@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
+from src.services.ingestion import IngestionService
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 import json
@@ -96,6 +96,9 @@ async def builder_page(request: Request, job_id: int, db: Session = Depends(get_
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+        
+    # JIT Hydration: Fetch full description if missing before rendering/tailoring
+    job = IngestionService.hydrate_job(db, job)
 
     # Get or create application
     app = db.query(Application).filter(
@@ -137,6 +140,9 @@ async def generate_resume(job_id: int, db: Session = Depends(get_db)):
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+        
+    # JIT Hydration: Fetch full description if missing before rendering/tailoring
+    job = IngestionService.hydrate_job(db, job)
 
     # Generate tailored resume
     result = ResumeTailorService.generate_tailored_resume(db, job, user.id)

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 class IngestionService:
     @staticmethod
-    def ingest_from_provider(db: Session, provider_name: str, keywords: str, location: str, fetch_details: bool = True) -> List[Dict[str, Any]]:
+    def ingest_from_provider(db: Session, provider_name: str, keywords: str, location: str, fetch_details: bool = False) -> List[Dict[str, Any]]:
         scraper_class = provider_registry.get(provider_name)
         scraper = scraper_class()
         
@@ -25,16 +25,7 @@ class IngestionService:
             if DeduplicationService.is_duplicate(db, cj.source, cj.external_job_id, cj.source_url):
                 continue
                 
-            # Optionally fetch full details if missing from discover payload
-            if fetch_details and (not cj.description or len(cj.description) < 1500):
-                try:
-                    full_cj = scraper.fetch_job(cj.source_url)
-                    # Merge description
-                    cj.description = full_cj.description
-                    if not cj.company or cj.company == "Unknown":
-                        cj.company = full_cj.company
-                except Exception as e:
-                    print(f"Failed to fetch details for {cj.source_url}: {e}")
+
             
             # Add to ephemeral list
             
@@ -78,6 +69,32 @@ class IngestionService:
             
         return ephemeral_jobs
         
+
+    @staticmethod
+    def hydrate_job(db: Session, job: Job) -> Job:
+        """Just-In-Time (JIT) hydration for full job descriptions."""
+        if job.description and len(job.description) > 1500:
+            return job
+            
+        scraper_class = provider_registry.get(job.source)
+        if not scraper_class:
+            return job
+            
+        scraper = scraper_class()
+        try:
+            full_cj = scraper.fetch_job(job.source_url)
+            if full_cj and full_cj.description:
+                job.description = full_cj.description
+            if full_cj and full_cj.company and full_cj.company != "Unknown":
+                job.company = full_cj.company
+                
+            db.commit()
+            db.refresh(job)
+        except Exception as e:
+            print(f"Hydration failed for job {job.id} from {job.source}: {e}")
+            
+        return job
+
     @staticmethod
     def ingest_all(db: Session, keywords: str, location: str) -> dict:
         results = {"status": "success", "counts": {}, "jobs": []}
