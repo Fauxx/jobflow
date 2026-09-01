@@ -41,6 +41,35 @@ class ResumeUpdate(BaseModel):
 
 # ─── Status Management ───
 
+
+from pydantic import BaseModel
+class BulkSkipRequest(BaseModel):
+    job_ids: list[int]
+
+@router.post("/bulk_skip")
+async def bulk_skip(req: BulkSkipRequest, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    # Get existing applications for these jobs
+    existing = db.query(Application).filter(
+        Application.user_id == user.id,
+        Application.job_id.in_(req.job_ids)
+    ).all()
+    
+    existing_ids = {app.job_id for app in existing}
+    
+    # Update existing
+    for app in existing:
+        app.status = "SKIPPED"
+        
+    # Create new for those missing
+    for jid in req.job_ids:
+        if jid not in existing_ids:
+            app = Application(job_id=jid, user_id=user.id, status="SKIPPED")
+            db.add(app)
+            
+    db.commit()
+    return {"status": "success"}
+
 @router.post("/{job_id}/status")
 async def update_status(job_id: int, status: str, db: Session = Depends(get_db)):
     user = get_current_user(db)

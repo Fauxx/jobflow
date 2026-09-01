@@ -95,7 +95,10 @@
                         {% endif %}
                         {{ job.source }}
                     </div>
-                    <span class="text-xs text-gray-500">{{ job.date_posted.strftime('%b %d') if job.date_posted else 'New' }}</span>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-300 font-bold" title="Date Posted">Posted: {{ job.date_posted.strftime('%b %d') if job.date_posted else 'Unknown' }}</div>
+                        <div class="text-[10px] text-gray-600 mt-0.5" title="Scraped At">Scraped: {{ job.scraped_at.strftime('%b %d, %I:%M %p') if job.scraped_at else 'Unknown' }}</div>
+                    </div>
                 </div>
                 
                 <div class="flex justify-between items-start mb-1 gap-2">
@@ -255,6 +258,28 @@
             document.getElementById('scrape-modal').classList.add('hidden');
         }
 
+
+
+        async function clearPipeline() {
+            if (!confirm("Are you sure you want to skip all CURRENTLY VISIBLE jobs in your pipeline?")) return;
+            
+            const visibleJobs = Array.from(document.querySelectorAll('.job-card-item')).filter(card => card.style.display !== 'none');
+            const jobIds = visibleJobs.map(card => card.id.replace('job-card-', ''));
+            
+            if (jobIds.length === 0) return;
+            
+            for (const id of jobIds) {
+                document.getElementById('job-card-' + id).remove();
+            }
+            document.getElementById('visible-count').innerText = 0;
+            
+            await fetch('/applications/bulk_skip', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ job_ids: jobIds })
+            });
+            window.location.reload();
+        }
 
         function applyFilters() {
             const sourceFilter = document.getElementById('filter-source').value;
