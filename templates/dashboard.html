@@ -187,6 +187,30 @@
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Location</label>
                     <input type="text" id="scrape-location" placeholder="e.g. Remote, Manila, etc." class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
                 </div>
+                <div class="flex space-x-4">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Date Posted</label>
+                        <select id="scrape-date" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+                            <option value="Any Time">Any Time</option>
+                            <option value="Last 24 Hours">Last 24 Hours</option>
+                            <option value="Last 3 Days">Last 3 Days</option>
+                            <option value="Last 7 Days">Last 7 Days</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-2">Sources</label>
+                    <div class="flex space-x-4">
+                        <label class="flex items-center space-x-2 text-sm text-gray-300 cursor-pointer">
+                            <input type="checkbox" value="jobstreet" class="scrape-provider rounded bg-gray-800 border-gray-700 text-blue-500 focus:ring-0" checked>
+                            <span>JobStreet</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-sm text-gray-300 cursor-pointer">
+                            <input type="checkbox" value="kalibrr" class="scrape-provider rounded bg-gray-800 border-gray-700 text-blue-500 focus:ring-0" checked>
+                            <span>Kalibrr</span>
+                        </label>
+                    </div>
+                </div>
             </div>
             
             <div class="flex justify-end space-x-3 mt-6">
@@ -209,8 +233,20 @@
         function runScraper() {
             const kw = localStorage.getItem('last-scrape-kw') || 'DevOps Engineer';
             const loc = localStorage.getItem('last-scrape-loc') || 'Remote';
+            const dateF = localStorage.getItem('last-scrape-date') || 'Any Time';
+            
             document.getElementById('scrape-keywords').value = kw;
             document.getElementById('scrape-location').value = loc;
+            document.getElementById('scrape-date').value = dateF;
+            
+            const savedProviders = localStorage.getItem('last-scrape-providers');
+            if (savedProviders) {
+                const pArr = savedProviders.split(',');
+                document.querySelectorAll('.scrape-provider').forEach(cb => {
+                    cb.checked = pArr.includes(cb.value);
+                });
+            }
+            
             document.getElementById('scrape-modal').classList.remove('hidden');
         }
 
@@ -221,14 +257,21 @@
             
             const kw = document.getElementById('scrape-keywords').value;
             const loc = document.getElementById('scrape-location').value;
+            const dateF = document.getElementById('scrape-date').value;
+            
+            const providers = Array.from(document.querySelectorAll('.scrape-provider:checked')).map(cb => cb.value).join(',');
             
             localStorage.setItem('last-scrape-kw', kw);
             localStorage.setItem('last-scrape-loc', loc);
+            localStorage.setItem('last-scrape-date', dateF);
+            localStorage.setItem('last-scrape-providers', providers);
             
             try {
                 const formData = new FormData();
                 formData.append('keywords', kw);
                 formData.append('location', loc);
+                formData.append('date_filter', dateF);
+                formData.append('providers', providers);
                 
                 const res = await fetch('/scrape', { 
                     method: 'POST',
