@@ -1,5 +1,15 @@
+<div align="center">
+
 # Jobflow 🌊
 *Your Personal Autonomous Job Pipeline & AI Resume Builder*
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=flat&logo=playwright&logoColor=white)](https://playwright.dev/python/)
+[![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=flat&logo=google&logoColor=white)](https://ai.google.dev/)
+
+</div>
 
 Jobflow is a high-performance Python application designed to act as your personal recruitment pipeline. It automates the tedious parts of the job search process by allowing you to instantly import leads from any website, intelligently mapping them against your Master Profile, and dynamically writing highly-tailored PDF resumes for every single application.
 
