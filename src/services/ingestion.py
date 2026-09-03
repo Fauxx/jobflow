@@ -33,11 +33,12 @@ class UniversalScraperService:
                 }
             )
             
-            # Try to seamlessly inject cookies from the user's actual local Firefox!
+            # Try to seamlessly inject cookies from the user's actual local browser!
             try:
                 import browser_cookie3
                 domain_name = urlparse(url).netloc.replace('www.', '')
-                cj = browser_cookie3.firefox(domain_name=domain_name)
+                # .load() automatically checks Chrome, Firefox, Edge, Safari, Brave, etc. across Windows/Mac/Linux!
+                cj = browser_cookie3.load(domain_name=domain_name)
                 pw_cookies = []
                 for c in cj:
                     if domain_name in c.domain:
