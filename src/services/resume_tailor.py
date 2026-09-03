@@ -171,3 +171,47 @@ IMPORTANT:
                 matched_skills=[],
                 missing_skills=[]
             ).model_dump()
+
+    @staticmethod
+    def adjust_resume(db: Session, job: Job, user_id: int, current_draft: dict, instruction: str) -> dict:
+        """
+        Takes the current resume draft and a user instruction, and returns an updated draft.
+        """
+        # Fetch the master profile so the AI can pull in new projects/experiences if requested
+        candidate_context = build_context(db, job, user_id)
+
+        prompt = f"""You are a Fact-Anchored Resume Tailoring Engine.
+The user wants to adjust their currently tailored resume for the job: {job.title} at {job.company}.
+
+USER INSTRUCTION:
+"{instruction}"
+
+CURRENT RESUME DRAFT (JSON):
+{json.dumps(current_draft, indent=2)}
+
+## JOB DESCRIPTION (for context):
+{job.description or 'No description available'}
+
+## MASTER CANDIDATE PROFILE (Knowledge Base):
+Use this if the user asks you to add an experience, project, or skill that is not in the current draft.
+{candidate_context}
+
+Please modify the resume draft according to the user's instruction.
+Return the updated resume strictly as a JSON object matching the EXACT SAME SCHEMA as the current draft.
+Do not include any conversational text, markdown formatting blocks, or explanations outside the JSON.
+"""
+        try:
+            resp = call_gemini(prompt)
+            # Clean markdown code fences if present
+            if "```json" in resp:
+                resp = resp.split("```json", 1)[1].rsplit("```", 1)[0].strip()
+            elif "```" in resp:
+                resp = resp.split("```", 1)[1].rsplit("```", 1)[0].strip()
+
+            result = json.loads(resp)
+            # Ensure it matches schema
+            validated = TailoredResume(**result)
+            return validated.model_dump()
+        except Exception as e:
+            print(f"[ResumeTailor] AI adjustment failed: {e}")
+            return current_draft

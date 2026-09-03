@@ -192,8 +192,8 @@
             
             <div class="absolute bottom-0 left-0 right-0 p-4 bg-gray-900/95 border-t border-gray-800 backdrop-blur">
                 <div class="relative max-w-4xl mx-auto flex items-center">
-                    <input type="text" placeholder="Ask AI to adjust the layout, shorten the summary, or add a section..." class="w-full bg-gray-800 border border-gray-700 rounded-full py-3 pl-5 pr-12 text-sm text-white focus:outline-none focus:border-purple-500 shadow-lg">
-                    <button class="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-purple-600 hover:bg-purple-500 rounded-full text-white transition flex items-center justify-center w-8 h-8">
+                    <input type="text" id="ai-instruction" onkeypress="if(event.key === 'Enter') submitAiAdjustment()" placeholder="Ask AI to adjust the layout, shorten the summary, or add a section..." class="w-full bg-gray-800 border border-gray-700 rounded-full py-3 pl-5 pr-12 text-sm text-white focus:outline-none focus:border-purple-500 shadow-lg">
+                    <button id="ai-adjust-btn" onclick="submitAiAdjustment()" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-purple-600 hover:bg-purple-500 rounded-full text-white transition flex items-center justify-center w-8 h-8">
                         <i class="fa-solid fa-arrow-up text-xs"></i>
                     </button>
                 </div>
@@ -354,6 +354,44 @@
                     iframe.src = `/applications/{{ job.id }}/download/pdf?inline=true&t=${new Date().getTime()}#zoom=page-fit&toolbar=0`;
                 }
             }, 1200); // 1.2s debounce for generating PDFs
+        }
+        
+        async function submitAiAdjustment() {
+            const input = document.getElementById('ai-instruction');
+            const btn = document.getElementById('ai-adjust-btn');
+            const instruction = input.value.trim();
+            
+            if (!instruction) return;
+            
+            // Force save current state first so AI sees latest edits
+            await forceSave();
+            
+            // UI Loading state
+            input.disabled = true;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
+            
+            try {
+                const res = await fetch(`/resume/builder/{{ job.id }}/adjust`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ instruction })
+                });
+                
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    const err = await res.json();
+                    alert("Adjustment failed: " + err.detail);
+                }
+            } catch (e) {
+                alert("Network error.");
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-arrow-up text-xs"></i>';
+                input.value = '';
+            }
         }
     </script>
 </body>

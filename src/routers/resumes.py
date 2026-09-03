@@ -109,6 +109,30 @@ async def save_builder(job_id: int, request: Request, db: Session = Depends(get_
     
     return {"status": "success"}
 
+from pydantic import BaseModel
+class AdjustRequest(BaseModel):
+    instruction: str
+
+@router.post("/builder/{job_id}/adjust")
+async def adjust_resume_with_ai(job_id: int, req: AdjustRequest, db: Session = Depends(get_db)):
+    from src.services.resume_tailor import ResumeTailorService
+    from fastapi import HTTPException
+    
+    user = get_current_user(db)
+    job = db.query(Job).filter(Job.id == job_id).first()
+    app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
+    
+    if not job or not app:
+        raise HTTPException(status_code=404, detail="Job or Application not found")
+        
+    current_draft = json.loads(app.ai_draft_json) if app.ai_draft_json else {}
+    
+    updated_draft = ResumeTailorService.adjust_resume(db, job, user.id, current_draft, req.instruction)
+    app.ai_draft_json = json.dumps(updated_draft)
+    db.commit()
+    
+    return {"status": "success"}
+
 @router.post("")
 async def save_resume(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
