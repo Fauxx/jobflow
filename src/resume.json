@@ -5,73 +5,100 @@
   "phone": "+63 998 280 6036",
   "linkedin": "linkedin.com/in/zet02",
   "github": "github.com/Fauxx",
-  "summary": "Computer Engineering Technology graduate (TUP Manila) specializing in Cloud-Native Infrastructure, Container Orchestration, and GitOps CI/CD pipelines. Hands-on experience provisioning multi-environment Kubernetes (K8s) clusters using Infrastructure as Code (IaC) with Terraform and automating continuous deployment via GitHub Actions and ArgoCD. Proficient in Linux system administration (Fedora/Ubuntu), site reliability engineering (SRE) principles, and full-stack observability stacks (Prometheus, Grafana, Loki).",
+  "summary": "Computer Engineering Technology graduate (TUP Manila) specializing in Cloud-Native Infrastructure, Kubernetes Orchestration, and GitOps CI/CD pipelines. Designed and deployed a full production-grade IoT fire monitoring platform on DigitalOcean Kubernetes (DOKS) using 4-layer Terraform IaC, ArgoCD GitOps, and a Prometheus/Grafana/Loki observability stack. Strong backend development experience in both Python (FastAPI, pandas, SQLAlchemy) and C# (ASP.NET Core Minimal APIs, Dapper, MySQL). Built AI-powered personal productivity tools integrating Google Gemini with automated PDF resume generation via Playwright and WeasyPrint.",
+
   "skills": [
     {
       "category": "Cloud Infrastructure & IaC",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
+      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform (multi-layer state-isolated), Helm, Infrastructure as Code (IaC), cert-manager"
     },
     {
-      "category": "Container Orchestration & Linux",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
+      "category": "Container Orchestration & Kubernetes",
+      "items": "Kubernetes (DOKS), kubectl, Kustomize (base/overlay), Deployments, StatefulSets, DaemonSets, Jobs, PersistentVolumeClaims, Ingress, NetworkPolicies, Docker, Docker Compose"
     },
     {
       "category": "CI/CD & GitOps",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
+      "items": "GitHub Actions (4-stage pipeline, path-filter matrix), ArgoCD (App-of-Apps, sync waves), GitOps, GHCR (GitHub Container Registry), Trivy (CVE scanning), Flyway (schema migrations), GitHub App bot credentials"
     },
     {
       "category": "Observability & Monitoring",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
+      "items": "Prometheus, Grafana (custom dashboards), Loki, Grafana Alloy (DaemonSet log collector), prom-client, node-exporter, cAdvisor, Telegraf, InfluxDB"
     },
     {
-      "category": "Networking & Security",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
+      "category": "Backend Development",
+      "items": "Python (FastAPI, pandas, SQLAlchemy, Alembic, Pydantic v2, asyncio, loguru), C# (ASP.NET Core, Minimal APIs, Dapper, Serilog), Node.js (Express.js, express-session, connect-pg-simple)"
+    },
+    {
+      "category": "AI & Automation",
+      "items": "Google Gemini API (v1beta, structured JSON output, fallback chains), Playwright (headless Firefox, SPA scraping, bot-bypass), BeautifulSoup4, WeasyPrint (PDF generation)"
     },
     {
       "category": "Databases & Messaging",
-      "items": "DigitalOcean (DOKS, Spaces, VPC, DNS), Terraform, Helm, Infrastructure as Code (IaC)"
+      "items": "PostgreSQL, MySQL, InfluxDB (time-series), SQLite, Mosquitto MQTT broker, paho-mqtt, EMQX"
+    },
+    {
+      "category": "Networking & Security",
+      "items": "Nginx (reverse proxy, auth_request gating, gzip, caching), Zero-Trust Kubernetes NetworkPolicies, JWT (python-jose), Bearer Token Auth (custom ASP.NET scheme), SSL/TLS, CORS, ForwardedHeaders middleware"
     }
   ],
+
   "projects": [
     {
       "title": "IoT-Based Fire Monitoring & Cloud-Native Analytics Platform",
-      "date": "Aug 2025 \u2013 June 2026",
+      "date": "Aug 2025 – June 2026",
       "role": "Project Leader, Lead Developer & Cloud Infrastructure Engineer",
       "bullets": [
-        "Enforced Zero-Trust security posture by authoring default-deny Kubernetes NetworkPolicies isolating all pod-to-pod traffic across 17+ microservice manifests",
-        "Architected reverse-proxy authentication gating using Nginx auth_request directives to verify user sessions against the backend API before granting access to protected dashboards and resources",
-        "Configured real-time observability dashboards (Grafana, Prometheus, Loki) for security monitoring, system health alerting, and incident tracking across the entire platform",
-        "Automated security operations through a 4-stage GitHub Actions CI/CD pipeline with change-detection matrix parallelism and ArgoCD GitOps for auditable, declarative infrastructure reconciliation",
-        "Implemented encrypted database transit, PostgreSQL-backed session persistence, and comprehensive security headers (X-Frame-Options, XSS-Protection, strict Referrer-Policy) to harden the application layer",
-        "Provisioned cloud infrastructure (DigitalOcean Kubernetes, VPC, S3 state backend) via multi-layer Terraform IaC with environment-isolated state management to prevent unauthorized configuration drift",
-        "Designed a Python ETL automation pipeline (pandas) performing time-series data aggregation, anomaly debouncing, and compliance-ready incident lifecycle logging into PostgreSQL"
+        "Provisioned DigitalOcean Kubernetes (DOKS) cloud infrastructure using Terraform across 4 isolated deployment layers (bootstrap, infra, platform, GitOps) with environment-isolated remote state backends on DO Spaces, eliminating state-lock contention and blast-radius risk",
+        "Implemented GitOps continuous delivery using ArgoCD App-of-Apps pattern reconciling 17+ Kubernetes manifests (Deployments, StatefulSets, DaemonSets, Jobs, PVCs, Ingress) across dev and prod environments using Kustomize base/overlay architecture",
+        "Built a 4-stage GitHub Actions CI/CD pipeline with path-based change detection (dorny/paths-filter), parallel matrix container builds, Trivy CVE security scanning, GHCR publishing, and automated GitOps PR generation via GitHub App bot credentials",
+        "Architected a real-time IoT data streaming pipeline: ESP32/MCU simulator → Mosquitto MQTT broker → Telegraf → InfluxDB → Python pandas ETL worker → PostgreSQL, with 30-minute anomaly debouncing and 5-minute time-series downsampling",
+        "Configured full-stack observability using Prometheus, Grafana Alloy DaemonSet (log collection), and Loki, provisioning 6 custom Grafana dashboards for API performance (p95/p99 latency), cluster health, MQTT throughput, PostgreSQL metrics, and fire telemetry",
+        "Enforced Zero-Trust Kubernetes NetworkPolicies with default-deny postures and micro-segmentation, restricting lateral pod traffic to explicitly whitelisted namespace/port pairs across all services",
+        "Configured zero-downtime database schema migrations using Flyway as a Kubernetes Job with ArgoCD sync-wave annotations (wave 5 for migrations, wave 10 for app pods), ensuring migrations complete before rolling pod updates begin",
+        "Architected Nginx auth_request gating that routes every protected dashboard request through the Express API session verification endpoint, enabling secure embedded Grafana iframes with role-injected headers"
+      ]
+    },
+    {
+      "title": "Jobflow — Personal Autonomous Job Pipeline & AI Resume Builder",
+      "date": "June 2026 – Present",
+      "role": "Solo Developer",
+      "bullets": [
+        "Built a Universal AI Job Importer using Playwright (headless Firefox with bot-bypass configuration) to fully render JavaScript-heavy SPAs from any job board (LinkedIn, Greenhouse, Workday, Lever), feeding raw text to Google Gemini for structured JD extraction",
+        "Designed a Master Profile knowledge base with granular bullet-level DB storage (each resume bullet as a separate PostgreSQL row), enabling precise AI retrieval and future skill-evidence linking via a many-to-many association table",
+        "Engineered a 4-stage AI resume tailoring pipeline: Context Builder (full profile → structured Markdown) → JD Extractor (Gemini parses requirements) → Resume Tailor (fact-anchored generation, 6–8 bullets/exp, Pydantic validated) → Interactive Builder UI",
+        "Implemented a Fact-Anchored prompting system with strict AI instructions preventing hallucination — all tailored bullets traceable to source profile entries, with matched_skills vs missing_skills gap analysis per job",
+        "Built a Gemini model fallback chain (gemini-3.6-flash → gemini-2.5-flash → gemini-flash-latest → gemini-pro-latest) ensuring near-zero AI downtime across the full pipeline",
+        "Integrated WeasyPrint PDF generation with Garamond/Georgia typography producing ATS-optimized, pixel-perfect professional resumes downloadable directly from the web UI"
       ]
     }
   ],
+
   "experience": [
     {
       "company": "InfoTouch Corporation",
       "location": "Makati, Metro Manila, Philippines",
-      "role": "Software Developer \u2013 Intern",
-      "date": "Feb 2026 \u2013 June 2026",
+      "role": "Software Developer – Intern",
+      "date": "Feb 2026 – June 2026",
       "bullets": [
-        "Refactored legacy backend web applications into high-performance C# Minimal APIs, tracing cross-stack API execution flows to maintain service availability.",
-        "Managed Git version control workflows, executing branch management, code merges, pull requests, and peer code reviews in an agile development environment.",
-        "Optimized database queries and route handlers using asynchronous programming (async/await) to reduce API latency.",
-        "Authored comprehensive unit test suites and documented modernized Minimal API endpoints to ensure long-term codebase maintainability."
+        "Audited and refactored legacy ASP.NET Web API controllers into high-performance C# Minimal APIs, tracing full cross-stack API execution flows from frontend to database to ensure zero service disruption during migration",
+        "Implemented async/await patterns across refactored route handlers and optimized MySQL queries via Dapper, reducing API response latency through connection pooling (MinPoolSize=5, MaxPoolSize=100) and asynchronous database access",
+        "Engineered atomic wallet transaction endpoints with pessimistic row-level locking (SELECT ... FOR UPDATE inside transactions) to prevent concurrent balance corruption across simultaneous payout and charge operations",
+        "Built a dual-mode authentication system supporting mobile agent login (phone number + session token) and web operator login (username/password + JWT-like role claims: IsAdmin, IsLead, IsActg, IsMngr) via a custom Bearer token scheme",
+        "Authored comprehensive unit test suites and API endpoint documentation for modernized Minimal API routes, and managed Git workflows including branch management, pull requests, and peer code reviews in an agile team environment"
       ]
     },
     {
       "company": "Concentrix",
       "location": "Mandaluyong, Metro Manila, Philippines",
       "role": "Adviser I, Sales",
-      "date": "July 2024 \u2013 Nov 2024",
+      "date": "July 2024 – Nov 2024",
       "bullets": [
-        "Provided cross-functional technical troubleshooting, account management, and network service resolution for telecommunications subscribers.",
-        "Utilized multiple internal CRM systems and technical documentation databases simultaneously to diagnose and resolve complex customer issues under strict SLAs."
+        "Provided cross-functional technical troubleshooting, account management, and network service resolution for telecommunications subscribers under strict SLAs.",
+        "Utilized multiple internal CRM systems and technical documentation databases simultaneously to diagnose and resolve complex customer issues."
       ]
     }
   ],
+
   "education": [
     {
       "school": "Technological University of the Philippines (TUP)",
@@ -80,22 +107,29 @@
       "date": "Graduation: Aug 2026"
     }
   ],
+
   "master_profile": {
-    "summary_context": "Computer Engineering Technology graduate with solid grounding in DevOps, GitOps, observability, zero-trust network setups, and microservices. Professional focus on building high-reliability, containerized cloud infrastructure using Terraform, Kubernetes (DOKS), Helm, and automated CI/CD pipelines (GitHub Actions, ArgoCD). Strong C# backend experience writing Minimal APIs, optimizing queries, and handling unit test suites.",
+    "summary_context": "Computer Engineering Technology graduate (TUP Manila, Aug 2026) with deep hands-on experience in cloud-native DevOps, Kubernetes orchestration, GitOps, and full-stack backend development. Core competency is building and operating production-grade cloud infrastructure: 4-layer Terraform IaC, managed Kubernetes (DOKS), ArgoCD GitOps delivery, GitHub Actions CI/CD with security scanning, and full Prometheus/Grafana/Loki observability stacks. Backend development spans Python (FastAPI, SQLAlchemy, pandas, Pydantic) and C# (ASP.NET Core Minimal APIs, Dapper, MySQL). Additional expertise in AI/LLM integration (Google Gemini API), headless browser automation (Playwright), IoT data streaming (MQTT, InfluxDB, Telegraf), and ATS-optimized PDF generation (WeasyPrint). Zero-Trust networking, Flyway schema migrations with ArgoCD sync waves, and Nginx auth_request security gating are areas of particular depth.",
+
     "projects": [
       {
         "title": "IoT-Based Fire Monitoring & Cloud-Native Analytics Platform",
-        "detailed_context": "This project was a cloud-native platform integrating IoT fire sensors with real-time analytics. Infrastructure was provisioned on DigitalOcean Kubernetes Service (DOKS) using Terraform. Key technologies used: Docker, Kustomize, ArgoCD (GitOps reconciliation), GitHub Actions for matrix container builds, Prometheus/Grafana/Loki for full observability, PostgreSQL, Mosquitto MQTT broker, InfluxDB, Flyway migration hook scripts, and microservice traffic isolation via Kubernetes NetworkPolicies."
+        "detailed_context": "University thesis project — a production-grade cloud-native IoT platform built entirely solo. Infrastructure provisioned on DigitalOcean Kubernetes Service (DOKS) using a 4-layer Terraform architecture with isolated remote state backends per environment (dev/prod) in DO Spaces. The 4 layers are: 00-bootstrap (state bucket setup), 01-infra (VPC, DOKS cluster, DNS), 02-platform (Helm: ArgoCD, ingress-nginx, cert-manager), 03-argocd (root App-of-Apps manifest, GitHub App bot credentials). Data pipeline: physical/simulated ESP32 MCUs → Mosquitto MQTT broker → Telegraf (json_v2 parser) → InfluxDB v2 (time-series) → Python pandas ETL worker (5-minute downsampling + 30-minute anomaly debouncing with upsert logic) → PostgreSQL (relational analytics + incident lifecycle). API layer: Node.js / Express.js with persistent sessions via connect-pg-simple (survives pod restarts), prom-client Prometheus instrumentation, and Nginx auth_request gating for Grafana embedding. CI/CD: 4-stage GitHub Actions — Stage 0 path-filter (dorny/paths-filter), Stage 1 matrix build + Trivy CVE scan + GHCR push, Stage 2a dev auto-deploy (kustomize edit + commit), Stage 2b prod promotion PR (peter-evans/create-pull-request with GitHub App short-lived tokens). GitOps: ArgoCD reconciles Kustomize base/overlay manifests (17+ K8s objects: Deployments, StatefulSets, DaemonSets, Jobs, PVCs, Ingress, NetworkPolicies). Zero-downtime migrations: Flyway runs as K8s Job at sync-wave:5, app pods at sync-wave:10. Zero-Trust: default-deny NetworkPolicies micro-segment all pod traffic. Observability: Prometheus + Grafana Alloy DaemonSet + Loki + 6 custom Grafana dashboards (API perf, Loki errors, cluster health, MQTT broker, PostgreSQL health, fire telemetry)."
+      },
+      {
+        "title": "Jobflow — Personal Autonomous Job Pipeline & AI Resume Builder",
+        "detailed_context": "Personal full-stack Python project. Built to fully automate the job search pipeline: paste any job URL → AI extracts structured job data → AI scores it against your career profile → AI generates a tailored, ATS-optimized PDF resume. Tech stack: FastAPI (Python 3.10+), PostgreSQL via SQLAlchemy ORM + Alembic migrations (SQLite for local dev), Google Gemini API (v1beta) with 4-model fallback chain, Playwright headless Firefox for SPA job scraping with bot-bypass, BeautifulSoup4 for HTML parsing, Jinja2 templates, TailwindCSS frontend, WeasyPrint for PDF generation (Garamond/Georgia typography), JWT auth (python-jose), Docker + Docker Compose. Key technical design: Master Profile stores career history at bullet-level granularity (each bullet as separate DB row) enabling precise AI retrieval. Context Builder assembles the full profile into a structured Markdown document for the AI. Resume Tailor uses Fact-Anchored prompting — AI strictly forbidden from inventing skills or metrics; rephrases only what exists in the profile. Over-generates 6-8 bullets per experience for user curation. Pydantic v2 validates all AI output before returning to the UI. The interactive Builder lets users add/remove/edit every bullet before PDF export."
       }
     ],
+
     "experience": [
       {
         "company": "InfoTouch Corporation",
-        "detailed_context": "Refactored legacy web endpoints into high-performance C# Minimal APIs (asynchronous async/await patterns), optimized Postgres query response latencies, handled git branch merges/pull requests in an agile environment, and authored robust xUnit suites."
+        "detailed_context": "Internship as Software Developer at a field services tech company operating a DTR (Daily Time Record) and dispatch platform. The codebase is SandHub API — ASP.NET Core (.NET 8+) with C#, MySQL, Dapper (raw SQL micro-ORM), Serilog structured logging, and custom Bearer token auth. Key work: audited legacy Web API controllers and refactored them into C# Minimal APIs; implemented async/await patterns for all route handlers and database calls; optimized MySQL queries with Dapper and configured connection pooling (MinPoolSize=5, MaxPoolSize=100); built atomic wallet operations with SELECT...FOR UPDATE row-level pessimistic locks inside transactions; built dual-mode auth (mobile phone-number login with expiring session tokens, web operator login with role-claim JWT — IsAdmin, IsLead, IsActg, IsMngr claims); authored unit tests; documented all new endpoints; managed Git workflows (branching, PRs, code reviews) in an agile team; did frontend component styling and responsive design fixes; built analytics dashboards and integrated tracking metrics; performed QA testing on both web and mobile app. Platform domain: agent dispatch, service orders, time-in/time-out DTR recording, wallet top-up/charge/payout, real-time agent presence state machine."
       },
       {
         "company": "Concentrix",
-        "detailed_context": "Handled telecommunications account troubleshooting, verified client network routes, resolved technical billing queries, and operated multiple internal databases under strict SLA deadlines."
+        "detailed_context": "Customer-facing technical support and sales adviser role for telecommunications subscribers. Operated multiple internal CRM systems and technical documentation databases simultaneously under strict SLA deadlines. Handled account troubleshooting, network service resolution, and complex billing queries."
       }
     ]
   }

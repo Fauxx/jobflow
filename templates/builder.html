@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Builder - {{ job.title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* Markdown rendering styles */
+        .prose h1 { font-size: 1.5xl; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .prose h2 { font-size: 1.25xl; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .prose p { margin-bottom: 0.75rem; }
+        .prose ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
+        .prose li { margin-bottom: 0.25rem; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center shrink-0">
+        <div class="flex items-center space-x-4">
+            <a href="/" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-arrow-left text-lg"></i></a>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">AI Co-Pilot Resume Builder</h1>
+                <div class="flex items-center space-x-2 text-sm mt-1">
+                    <span class="text-gray-400">Targeting:</span>
+                    <span class="text-blue-400 font-semibold">{{ job.title }} at {{ job.company }}</span>
+                    <span class="text-gray-600">•</span>
+                    <span class="text-gray-400 text-xs px-2 py-0.5 bg-gray-800 rounded">{{ job.source }}</span>
+                    <a href="{{ job.source_url }}" target="_blank" class="text-gray-500 hover:text-blue-400 transition" title="View Original Posting">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            {% if tailored_resume.summary and 'AI generation failed' not in tailored_resume.summary %}
+            <button onclick="openPreview()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg flex items-center space-x-2 transition border border-gray-600">
+                <i class="fa-solid fa-eye"></i>
+                <span>Preview</span>
+            </button>
+            <a href="/applications/{{ job.id }}/download/pdf" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg flex items-center space-x-2 transition shadow-lg shadow-blue-900/20">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Export PDF</span>
+            </a>
+            {% else %}
+            <button disabled class="bg-gray-700 text-gray-500 font-bold py-2 px-6 rounded-lg flex items-center space-x-2 cursor-not-allowed">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Export PDF</span>
+            </button>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Main Split Screen -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- LEFT PANEL: Job Description (w-1/3) -->
+        <section class="w-1/3 bg-gray-850 border-r border-gray-700 flex flex-col h-full overflow-hidden">
+            <div class="p-4 bg-gray-800 border-b border-gray-700 shrink-0">
+                <h2 class="font-bold text-gray-200 flex items-center space-x-2 text-sm">
+                    <i class="fa-solid fa-briefcase text-blue-400"></i>
+                    <span>Job Description</span>
+                </h2>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 prose text-gray-300 text-sm" id="jd-content">
+                {{ job.description }}
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: Interactive Builder (w-2/3) -->
+        <section class="w-2/3 bg-gray-900 flex flex-col h-full overflow-hidden relative border-r border-gray-700">
+            <div class="p-4 bg-gray-800 border-b border-gray-700 shrink-0 flex justify-between items-center">
+                <h2 class="font-bold text-gray-200 flex items-center space-x-2 text-sm">
+                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
+                    <span>Tailored Suggestions</span>
+                </h2>
+                <span class="text-xs font-semibold px-2 py-1 bg-purple-900/50 text-purple-300 rounded-md border border-purple-700/50">
+                    Auto-saves on edit
+                </span>
+            </div>
+            
+            <div class="p-8 overflow-y-auto flex-1 space-y-8 pb-32" id="resume-editor" oninput="debounceSave()">
+                
+                {% if tailored_resume.summary and 'AI generation failed' in tailored_resume.summary %}
+                <div class="flex flex-col items-center justify-center py-20 text-center">
+                    <i class="fa-solid fa-robot text-5xl text-gray-700 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-300">AI Generation Paused</h3>
+                    <p class="text-sm text-gray-500 mt-2 mb-6 max-w-md">We skipped the automatic generation to save your API quota. Click the button below when you are ready to tailor this resume.</p>
+                    <button onclick="regenerateResume({{ job.id }})" id="regen-btn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-6 rounded-xl transition flex items-center space-x-2 shadow-lg shadow-purple-900/20">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Generate Tailored Resume</span>
+                    </button>
+                </div>
+                {% else %}
+                <div class="flex justify-end mb-[-1rem]">
+                    <button onclick="regenerateResume({{ job.id }})" id="regen-btn" class="text-xs text-gray-500 hover:text-purple-400 transition flex items-center space-x-1">
+                        <i class="fa-solid fa-rotate-right"></i><span>Regenerate</span>
+                    </button>
+                </div>
+                <!-- Summary -->
+                <div class="space-y-2">
+                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider">Professional Summary</h3>
+                    <textarea id="summary-input" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-blue-500 focus:outline-none">{{ tailored_resume.summary }}</textarea>
+                </div>
+
+                <!-- Skills -->
+                <div class="space-y-2">
+                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider">Targeted Skills</h3>
+                    <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 flex flex-wrap gap-2" id="skills-container">
+                        {% for skill in tailored_resume.skills %}
+                            <span class="skill-badge px-3 py-1 bg-blue-900/40 text-blue-300 rounded-full text-sm border border-blue-700/50 font-medium flex items-center" data-skill="{{ skill }}">
+                                {{ skill }}
+                                <button type="button" onclick="this.parentElement.remove(); debounceSave();" class="ml-2 hover:text-red-400 transition"><i class="fa-solid fa-xmark"></i></button>
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Experience -->
+                <div class="space-y-4">
+                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider">Experience</h3>
+                    {% for exp in tailored_resume.experiences %}
+                    <div class="experience-block bg-gray-800 rounded-lg border border-gray-700 p-5 space-y-4 shadow-sm">
+                        <div class="flex justify-between items-start border-b border-gray-700 pb-3">
+                            <div class="w-full">
+                                <input type="text" value="{{ exp.title }}" class="exp-title w-full font-bold text-lg bg-transparent border-none text-white focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1">
+                                <div class="text-sm text-gray-400 mt-1 flex space-x-1 w-full">
+                                    <input type="text" value="{{ exp.company }}" class="exp-company bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1 w-1/2"> 
+                                    <span>•</span>
+                                    <input type="text" value="{{ exp.date_range }}" class="exp-date bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-1/3">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Suggested Bullets (Check to include)</p>
+                            {% for bullet in exp.bullets %}
+                            <div class="bullet-row flex items-start space-x-3 group {% if bullet.highly_recommended %}bg-purple-900/10 border border-purple-500/30 p-2 rounded-lg{% else %}p-2 border border-transparent{% endif %} transition">
+                                <input type="checkbox" onchange="debounceSave()" {% if bullet.highly_recommended %}checked{% endif %} class="bullet-checkbox mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer">
+                                <div class="flex-1">
+                                    <textarea rows="2" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none">{{ bullet.tailored_text }}</textarea>
+                                    {% if bullet.highly_recommended %}
+                                    <p class="text-xs text-purple-400 mt-1 flex items-center space-x-1">
+                                        <i class="fa-solid fa-star"></i>
+                                        <span>Highly Recommended: {{ bullet.reason }}</span>
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Projects -->
+                <div class="space-y-4">
+                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider">Projects</h3>
+                    {% for proj in tailored_resume.projects %}
+                    <div class="project-block bg-gray-800 rounded-lg border border-gray-700 p-5 space-y-4 shadow-sm">
+                        <div class="flex justify-between items-start border-b border-gray-700 pb-3">
+                            <div class="w-full">
+                                <input type="text" value="{{ proj.name }}" class="proj-name w-full font-bold text-lg bg-transparent border-none text-white focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1">
+                                <div class="text-sm text-gray-400 mt-1 flex space-x-1 w-full">
+                                    <input type="text" value="{{ proj.role }}" class="proj-role bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1 w-1/3" placeholder="Role"> 
+                                    <span>•</span>
+                                    <input type="text" value="{{ proj.date_range }}" class="proj-date bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-1/4">
+                                </div>
+                                <input type="text" value="{{ proj.tech_stack }}" class="proj-tech w-full text-sm text-blue-400 bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1 mt-1" placeholder="Tech Stack">
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Suggested Bullets (Check to include)</p>
+                            {% for bullet in proj.bullets %}
+                            <div class="bullet-row flex items-start space-x-3 group {% if bullet.highly_recommended %}bg-purple-900/10 border border-purple-500/30 p-2 rounded-lg{% else %}p-2 border border-transparent{% endif %} transition">
+                                <input type="checkbox" onchange="debounceSave()" {% if bullet.highly_recommended %}checked{% endif %} class="bullet-checkbox mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer">
+                                <div class="flex-1">
+                                    <textarea rows="2" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none">{{ bullet.tailored_text }}</textarea>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="absolute bottom-0 left-0 right-0 p-4 bg-gray-900/95 border-t border-gray-800 backdrop-blur">
+                <div class="relative max-w-4xl mx-auto flex items-center">
+                    <input type="text" placeholder="Ask AI to adjust the layout, shorten the summary, or add a section..." class="w-full bg-gray-800 border border-gray-700 rounded-full py-3 pl-5 pr-12 text-sm text-white focus:outline-none focus:border-purple-500 shadow-lg">
+                    <button class="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-purple-600 hover:bg-purple-500 rounded-full text-white transition flex items-center justify-center w-8 h-8">
+                        <i class="fa-solid fa-arrow-up text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
+        <div class="bg-gray-300 w-full max-w-5xl h-full rounded-xl flex flex-col overflow-hidden shadow-2xl border border-gray-600">
+            <div class="p-3 bg-gray-800 border-b border-gray-700 flex justify-between items-center text-gray-200">
+                <span class="font-bold tracking-wider uppercase text-sm"><i class="fa-solid fa-file-pdf text-red-400 mr-2"></i>Live 1-Page Preview</span>
+                <button onclick="closePreview()" class="text-gray-400 hover:text-white transition bg-gray-700 hover:bg-gray-600 rounded-full w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-hidden relative bg-gray-500 rounded-b-xl">
+                <iframe id="preview-frame" class="w-full h-full border-none"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Render Markdown JD on load
+        document.addEventListener("DOMContentLoaded", () => {
+            const jdContentDiv = document.getElementById("jd-content");
+            const rawMarkdown = `{{ job.description|safe }}`;
+            jdContentDiv.innerHTML = marked.parse(rawMarkdown);
+        });
+
+        async function regenerateResume(jobId) {
+            const btn = document.getElementById('regen-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Generating... (This takes 10-15s)</span>';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`/resume/builder/${jobId}/regenerate`, { method: 'POST' });
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    const data = await res.json();
+                    alert("Generation failed: " + data.detail);
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                alert("Network error occurred.");
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        // Live Auto-Save Logic
+        let saveTimeout = null;
+
+        function buildJsonFromDom() {
+            // 1. Summary
+            const summaryInput = document.getElementById('summary-input');
+            const summary = summaryInput ? summaryInput.value : "";
+            
+            // 2. Skills
+            const skills = [];
+            document.querySelectorAll('.skill-badge').forEach(badge => {
+                skills.push(badge.getAttribute('data-skill'));
+            });
+            
+            // 3. Experiences
+            const experiences = [];
+            document.querySelectorAll('.experience-block').forEach(expBlock => {
+                const title = expBlock.querySelector('.exp-title').value;
+                const company = expBlock.querySelector('.exp-company').value;
+                const date_range = expBlock.querySelector('.exp-date').value;
+                
+                const bullets = [];
+                expBlock.querySelectorAll('.bullet-row').forEach(bulletRow => {
+                    const isChecked = bulletRow.querySelector('.bullet-checkbox').checked;
+                    if (isChecked) {
+                        bullets.push({
+                            tailored_text: bulletRow.querySelector('.bullet-text').value,
+                            highly_recommended: bulletRow.querySelector('.bullet-checkbox').checked,
+                            original_text: "",
+                            reason: ""
+                        });
+                    }
+                });
+                
+                experiences.push({ title, company, date_range, bullets });
+            });
+            
+            // 4. Projects
+            const projects = [];
+            document.querySelectorAll('.project-block').forEach(projBlock => {
+                const name = projBlock.querySelector('.proj-name').value;
+                const role = projBlock.querySelector('.proj-role').value;
+                const date_range = projBlock.querySelector('.proj-date').value;
+                const tech_stack = projBlock.querySelector('.proj-tech').value;
+                
+                const bullets = [];
+                projBlock.querySelectorAll('.bullet-row').forEach(bulletRow => {
+                    const isChecked = bulletRow.querySelector('.bullet-checkbox').checked;
+                    if (isChecked) {
+                        bullets.push({
+                            tailored_text: bulletRow.querySelector('.bullet-text').value,
+                            highly_recommended: bulletRow.querySelector('.bullet-checkbox').checked,
+                            original_text: "",
+                            reason: ""
+                        });
+                    }
+                });
+                
+                projects.push({ name, role, date_range, tech_stack, bullets });
+            });
+            
+            return {
+                summary,
+                skills,
+                experiences,
+                projects,
+                matched_skills: [],
+                missing_skills: [],
+                certifications: []
+            };
+        }
+
+        async function forceSave() {
+            const data = buildJsonFromDom();
+            try {
+                await fetch(`/resume/builder/{{ job.id }}/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } catch (e) {
+                console.error("Save failed:", e);
+            }
+        }
+
+        async function openPreview() {
+            await forceSave();
+            document.getElementById('preview-modal').classList.remove('hidden');
+            const iframe = document.getElementById('preview-frame');
+            // Add a timestamp to force the PDF viewer to bypass cache, and inline=true to prevent download
+            iframe.src = `/applications/{{ job.id }}/download/pdf?inline=true&t=${new Date().getTime()}#zoom=page-fit&toolbar=0`;
+        }
+
+        function closePreview() {
+            document.getElementById('preview-modal').classList.add('hidden');
+        }
+
+        function debounceSave() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => {
+                await forceSave();
+                const modal = document.getElementById('preview-modal');
+                if (!modal.classList.contains('hidden')) {
+                    const iframe = document.getElementById('preview-frame');
+                    iframe.src = `/applications/{{ job.id }}/download/pdf?inline=true&t=${new Date().getTime()}#zoom=page-fit&toolbar=0`;
+                }
+            }, 1200); // 1.2s debounce for generating PDFs
+        }
+    </script>
+</body>
+</html>

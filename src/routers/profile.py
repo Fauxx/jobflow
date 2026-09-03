@@ -1,12 +1,21 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import json
+import tempfile
 
 from src.core.database import get_db
 from src.core.dependencies import get_current_user
 from src.services.profile_service import get_full_profile, save_full_profile
+from src.models.profile import UserProfile, ProfileProject, ProfileExperience
+from sqlalchemy import orm
+
+try:
+    from weasyprint import HTML as WeasyprintHTML
+    WEASYPRINT_AVAILABLE = True
+except ImportError:
+    WEASYPRINT_AVAILABLE = False
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 templates = Jinja2Templates(directory="templates")
@@ -83,3 +92,54 @@ async def import_profile(db: Session = Depends(get_db), current_user = Depends(g
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/preview", response_class=HTMLResponse)
+async def preview_profile(request: Request, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    """Render a rich, portfolio-style HTML preview of the Master Profile from DB."""
+    profile = db.query(UserProfile).options(
+        orm.selectinload(UserProfile.skills),
+        orm.selectinload(UserProfile.projects).selectinload(ProfileProject.bullets),
+        orm.selectinload(UserProfile.experiences).selectinload(ProfileExperience.bullets),
+        orm.selectinload(UserProfile.education),
+        orm.selectinload(UserProfile.achievements),
+    ).filter(UserProfile.user_id == current_user.id).first()
+
+    if not profile:
+        return HTMLResponse("<h1>No profile found. <a href='/profile/'>Create one here</a>.</h1>", status_code=404)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="profile/preview.html",
+        context={"request": request, "profile": profile}
+    )
+
+
+@router.get("/preview/pdf")
+async def preview_profile_pdf(request: Request, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    """Generate and download a PDF version of the Master Profile preview."""
+    if not WEASYPRINT_AVAILABLE:
+        raise HTTPException(status_code=501, detail="WeasyPrint is not installed.")
+
+    profile = db.query(UserProfile).options(
+        orm.selectinload(UserProfile.skills),
+        orm.selectinload(UserProfile.projects).selectinload(ProfileProject.bullets),
+        orm.selectinload(UserProfile.experiences).selectinload(ProfileExperience.bullets),
+        orm.selectinload(UserProfile.education),
+        orm.selectinload(UserProfile.achievements),
+    ).filter(UserProfile.user_id == current_user.id).first()
+
+    if not profile:
+        raise HTTPException(status_code=404, detail="No profile found.")
+
+    html_content = templates.TemplateResponse(
+        request=request,
+        name="profile/preview.html",
+        context={"request": request, "profile": profile}
+    ).body.decode()
+
+    tmp_pdf = tempfile.mktemp(suffix=".pdf")
+    WeasyprintHTML(string=html_content, base_url=str(request.base_url)).write_pdf(tmp_pdf)
+
+    filename = f"{(profile.name or 'Profile').replace(' ', '_')}_MasterProfile.pdf"
+    return FileResponse(tmp_pdf, filename=filename, media_type="application/pdf")

@@ -185,7 +185,7 @@ async def save_resume(job_id: int, resume: ResumeUpdate, db: Session = Depends(g
 # ─── Download ───
 
 @router.get("/{job_id}/download/pdf")
-async def download_pdf(request: Request, job_id: int, db: Session = Depends(get_db)):
+async def download_pdf(request: Request, job_id: int, inline: bool = False, db: Session = Depends(get_db)):
     if not WEASYPRINT_AVAILABLE:
         return JSONResponse({"error": "WeasyPrint not installed"}, status_code=500)
 
@@ -208,8 +208,31 @@ async def download_pdf(request: Request, job_id: int, db: Session = Depends(get_
     WeasyHTML(string=html_content).write_pdf(tmp_pdf)
 
     filename = f"Resume_{profile.name or 'Candidate'}_{job.company}.pdf".replace(" ", "_")
+    
+    if inline:
+        from fastapi.responses import Response
+        with open(tmp_pdf, "rb") as f:
+            pdf_bytes = f.read()
+        return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{filename}"'})
+        
     return FileResponse(tmp_pdf, filename=filename, media_type="application/pdf")
 
+@router.get("/{job_id}/preview/html")
+async def preview_html(request: Request, job_id: int, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    job = db.query(Job).filter(Job.id == job_id).first()
+    app = db.query(Application).filter(
+        Application.job_id == job_id, Application.user_id == user.id
+    ).first()
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+
+    resume_data = json.loads(app.ai_draft_json) if app and app.ai_draft_json else {}
+
+    return templates.TemplateResponse(
+        request=request,
+        name="applications/resume_print.html",
+        context={"request": request, "resume": resume_data, "profile": profile, "job": job}
+    )
 
 @router.get("/{job_id}/download/docx")
 async def download_docx(job_id: int, db: Session = Depends(get_db)):

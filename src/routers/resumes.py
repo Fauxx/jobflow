@@ -37,6 +37,78 @@ async def edit_resume(request: Request, db: Session = Depends(get_db)):
             
     return templates.TemplateResponse(request=request, name="resume_edit.html", context={"request": request, "resume": resume_data})
 
+from src.models.job import Job
+from src.models.application import Application
+from src.services.job_analysis import extract_clean_jd
+from src.services.resume_tailor import ResumeTailorService
+
+@router.get("/builder/{job_id}", response_class=HTMLResponse)
+async def builder(request: Request, job_id: int, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    job = db.query(Job).filter(Job.id == job_id).first()
+    
+    if not job:
+        return HTMLResponse("Job not found", status_code=404)
+        
+    # Auto-Approve Job if not already applied/approved
+    app = db.query(Application).filter(Application.job_id == job.id, Application.user_id == user.id).first()
+    if not app:
+        app = Application(job_id=job.id, user_id=user.id, status="APPROVED")
+        db.add(app)
+        db.commit()
+    elif app.status == "NEW" or app.status == "SKIPPED":
+        app.status = "APPROVED"
+        db.commit()
+        
+    # Extract clean JD if not done already
+    if not job.description or "[AI Extraction Pending]" in job.description:
+        if job.raw_scraped_text:
+            job.description = extract_clean_jd(job.raw_scraped_text)
+            db.commit()
+            
+    # Tailor resume - Cache it to save API quota!
+    if app.ai_draft_json:
+        tailored_data = json.loads(app.ai_draft_json)
+    else:
+        tailored_data = ResumeTailorService.generate_tailored_resume(db, job, user.id)
+        app.ai_draft_json = json.dumps(tailored_data)
+        db.commit()
+    
+    return templates.TemplateResponse(request=request, name="builder.html", context={
+        "request": request, 
+        "job": job, 
+        "tailored_resume": tailored_data
+    })
+
+@router.post("/builder/{job_id}/regenerate")
+async def regenerate_builder(job_id: int, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    job = db.query(Job).filter(Job.id == job_id).first()
+    app = db.query(Application).filter(Application.job_id == job.id, Application.user_id == user.id).first()
+    
+    if not job or not app:
+        raise HTTPException(status_code=404, detail="Job or Application not found")
+        
+    tailored_data = ResumeTailorService.generate_tailored_resume(db, job, user.id)
+    app.ai_draft_json = json.dumps(tailored_data)
+    db.commit()
+    
+    return {"status": "success"}
+
+@router.post("/builder/{job_id}/save")
+async def save_builder(job_id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
+    
+    if not app:
+        return {"status": "error", "message": "Application not found"}
+        
+    data = await request.json()
+    app.ai_draft_json = json.dumps(data)
+    db.commit()
+    
+    return {"status": "success"}
+
 @router.post("")
 async def save_resume(request: Request, db: Session = Depends(get_db)):
     data = await request.json()

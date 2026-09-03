@@ -10,7 +10,7 @@ class ImportRequest(BaseModel):
     url: HttpUrl
 
 @router.post("")
-async def import_job_from_url(req: ImportRequest, db: Session = Depends(get_db)):
+def import_job_from_url(req: ImportRequest, db: Session = Depends(get_db)):
     try:
         job = UniversalScraperService.import_job(str(req.url), db)
         return {"status": "success", "job_id": job.id, "title": job.title, "company": job.company}

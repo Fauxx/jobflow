@@ -8,92 +8,111 @@ from urllib.parse import urlparse
 
 class UniversalScraperService:
     @staticmethod
-    def extract_text_from_url(url: str) -> str:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5"
-        }
-        try:
-            response = requests.get(url, headers=headers, timeout=15)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.text, 'html.parser')
+    def extract_text_and_title_from_url(url: str) -> dict:
+        """
+        Uses Playwright to fully render the page, bypass basic bot checks, 
+        and extract the raw visible text + page title.
+        """
+        from playwright.sync_api import sync_playwright
+        import os
+        
+        # Use persistent profile to reuse cookies and bypass login walls
+        profile_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "playwright_profile"))
+        os.makedirs(profile_dir, exist_ok=True)
+        
+        with sync_playwright() as p:
+            # Using persistent context to keep sessions alive
+            context = p.firefox.launch_persistent_context(
+                user_data_dir=profile_dir,
+                headless=True,
+                viewport={"width": 1280, "height": 800},
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+                firefox_user_prefs={
+                    "dom.webdriver.enabled": False,
+                    "media.peerconnection.enabled": False
+                }
+            )
             
-            # Remove script and style elements
-            for script in soup(["script", "style", "noscript", "meta", "link", "header", "footer"]):
-                script.decompose()
+            # Try to seamlessly inject cookies from the user's actual local Firefox!
+            try:
+                import browser_cookie3
+                domain_name = urlparse(url).netloc.replace('www.', '')
+                cj = browser_cookie3.firefox(domain_name=domain_name)
+                pw_cookies = []
+                for c in cj:
+                    if domain_name in c.domain:
+                        pw_cookies.append({
+                            'name': c.name,
+                            'value': c.value,
+                            'domain': c.domain,
+                            'path': c.path
+                        })
+                if pw_cookies:
+                    context.add_cookies(pw_cookies)
+                    print(f"Loaded {len(pw_cookies)} native Firefox cookies for {domain_name}")
+            except Exception as e:
+                print(f"Could not load native browser cookies: {e}")
+
+            page = context.new_page()
+            
+            try:
+                page.goto(url, timeout=30000)
+                # Wait for network idle or a short timeout to let SPAs load
+                page.wait_for_timeout(3000)
                 
-            # Get text and collapse whitespace
-            text = soup.get_text(separator=' ')
-            lines = (line.strip() for line in text.splitlines())
-            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-            text = '\n'.join(chunk for chunk in chunks if chunk)
-            
-            # Limit text to roughly 30,000 characters to fit well within context
-            return text[:30000]
-        except Exception as e:
-            raise ValueError(f"Failed to fetch webpage: {str(e)}")
+                title = page.title()
+                
+                # Get the HTML and pass to BeautifulSoup to strip noise
+                html_content = page.content()
+                soup = BeautifulSoup(html_content, 'html.parser')
+                
+                for script in soup(["script", "style", "noscript", "meta", "link", "header", "footer"]):
+                    script.decompose()
+                    
+                text = soup.get_text(separator=' ')
+                lines = (line.strip() for line in text.splitlines())
+                chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+                clean_text = '\n'.join(chunk for chunk in chunks if chunk)
+                
+                return {
+                    "title": title.strip() if title else "Unknown Title",
+                    "text": clean_text[:50000] # Increased limit since we bypass AI here
+                }
+            except Exception as e:
+                raise ValueError(f"Playwright failed to fetch webpage: {str(e)}")
+            finally:
+                context.close()
 
     @staticmethod
     def import_job(url: str, db: Session) -> Job:
         domain = urlparse(url).netloc.replace('www.', '')
         
-        # 1. Fetch raw text
-        raw_text = UniversalScraperService.extract_text_from_url(url)
-        if not raw_text or len(raw_text) < 100:
-            raise ValueError("Could not extract enough text from the URL. The page might be heavily JavaScript-rendered or protected.")
+        # Check if job already exists
+        existing_job = db.query(Job).filter(Job.source_url == url).first()
+        if existing_job:
+            return existing_job
             
-        # 2. Ask Gemini to extract job data
-        prompt = f"""You are an expert AI Job Data Extractor.
-I am providing you with the raw, scraped text from a webpage that contains a job posting.
-Read the text and extract the exact job title, company name, location, and the full job description.
-
-STRICT RULES:
-1. Return ONLY raw JSON. No markdown fences, no explanations.
-2. The description must be the FULL job description. Do not summarize it. Format the description cleanly using markdown (e.g. bullet points for requirements).
-3. If the text does not appear to be a job posting at all, return {{"error": "Could not identify a job posting on this page."}}
-
-RAW TEXT:
----
-{raw_text}
----
-
-EXPECTED JSON SCHEMA:
-{{
-    "title": "Job Title",
-    "company": "Company Name",
-    "location": "Location or Remote",
-    "description": "Full markdown description..."
-}}
-"""
-        ai_resp = call_gemini(prompt)
+        # 1. Fetch raw text instantly (No AI)
+        data = UniversalScraperService.extract_text_and_title_from_url(url)
+        raw_text = data["text"]
+        page_title = data["title"]
         
-        # Clean JSON if model hallucinates markdown fences
-        if "```json" in ai_resp:
-            ai_resp = ai_resp.split("```json", 1)[1].rsplit("```", 1)[0].strip()
-        elif "```" in ai_resp:
-            ai_resp = ai_resp.split("```", 1)[1].rsplit("```", 1)[0].strip()
+        if not raw_text or len(raw_text) < 100:
+            raise ValueError("Could not extract enough text from the URL. The page might be heavily blocked.")
             
-        try:
-            data = json.loads(ai_resp)
-        except Exception as e:
-            raise ValueError(f"Failed to parse AI response: {ai_resp}")
-            
-        if "error" in data:
-            raise ValueError(data["error"])
-            
-        if not data.get("title") or not data.get("company"):
-            raise ValueError("AI failed to extract critical job details (Title or Company).")
-            
-        # 3. Save to Database
+        # 2. Extract basic info without AI for temporary display
+        # We can try to guess the company from the domain or title
+        guessed_company = domain.split('.')[0].capitalize()
+        
+        # 3. Save to Database instantly
         new_job = Job(
-            title=data.get("title", "Unknown Title"),
-            company=data.get("company", "Unknown Company"),
-            location=data.get("location", "Unspecified"),
-            description=data.get("description", ""),
+            title=page_title, # Temporary title
+            company=guessed_company, # Temporary company
+            location="Unspecified",
+            description="[AI Extraction Pending] Click 'Approve & Tailor' to process this job.",
+            raw_scraped_text=raw_text,
             source=domain,
             source_url=url
-            
         )
         
         db.add(new_job)
@@ -104,25 +123,5 @@ EXPECTED JSON SCHEMA:
 
     @staticmethod
     def hydrate_job(db: Session, job: Job):
-        if job.description and len(job.description) > 500:
-            return
-            
-        if not job.source_url:
-            return
-            
-        # Re-fetch full JD via Universal Scraper
-        raw_text = UniversalScraperService.extract_text_from_url(job.source_url)
-        if not raw_text: return
-        
-        prompt = f"""Extract ONLY the full job description from this raw web text. Return raw JSON: {{"description": "full markdown here"}}. Raw text:\n{raw_text}"""
-        ai_resp = call_gemini(prompt)
-        
-        try:
-            if "```json" in ai_resp: ai_resp = ai_resp.split("```json", 1)[1].rsplit("```", 1)[0].strip()
-            data = json.loads(ai_resp)
-            if data.get("description"):
-                job.description = data["description"]
-                
-                db.commit()
-        except Exception:
-            pass
+        # Deprecated: Hydration will happen dynamically during the "Approve" phase
+        pass

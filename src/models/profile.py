@@ -64,7 +64,10 @@ class ProfileProject(Base):
     id = Column(Integer, primary_key=True, index=True)
     profile_id = Column(Integer, ForeignKey('user_profiles.id', ondelete="CASCADE"), nullable=False)
     name = Column(String, nullable=False)
-    description = Column(Text, nullable=True)
+    description = Column(Text, nullable=True) # Legacy summary
+    problem_statement = Column(Text, nullable=True) # Deep Dive
+    actions_taken = Column(Text, nullable=True) # Deep Dive
+    measurable_results = Column(Text, nullable=True) # Deep Dive
     role = Column(String, nullable=True)
     url = Column(String, nullable=True)
     tech_stack = Column(Text, nullable=True)  # comma-separated
@@ -83,7 +86,11 @@ class ProfileExperience(Base):
     location = Column(String, nullable=True)
     start_date = Column(String, nullable=True)
     end_date = Column(String, nullable=True)  # 'Present' or date string
-    description = Column(Text, nullable=True)
+    description = Column(Text, nullable=True) # Legacy summary
+    problem_statement = Column(Text, nullable=True) # Deep Dive
+    actions_taken = Column(Text, nullable=True) # Deep Dive
+    measurable_results = Column(Text, nullable=True) # Deep Dive
+    tech_stack = Column(Text, nullable=True) # Deep Dive
     achievements = Column(Text, nullable=True)
     order = Column(Integer, default=0, nullable=False)
     bullets = relationship("ProfileBullet", back_populates="experience", cascade="all, delete-orphan", order_by="ProfileBullet.order", foreign_keys="ProfileBullet.experience_id")

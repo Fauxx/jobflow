@@ -5,21 +5,21 @@ Jobflow is a high-performance Python application designed to act as your persona
 
 ## 🚀 Features
 
-- **Universal AI Link Importer**: Say goodbye to fragile, hardcoded web scrapers. Simply paste a job URL from **any website** (LinkedIn, Greenhouse, Workday, Lever, or a startup's custom site). The backend downloads the raw page text and uses Google's Gemini AI to intelligently extract the exact Job Title, Company, and Description. Zero IP bans, 100% reliability.
+- **Triage Queue Import System**: Paste a job link (LinkedIn, Indeed, JobStreet, Kalibrr, etc.) and Jobflow runs a lightning-fast 3-second scrape to fetch just the Title and Company. This populates your "Concourse/Receiving Area" dashboard without wasting heavy AI processing on jobs you haven't reviewed yet.
+- **Frictionless Native Authentication (Firefox)**: Say goodbye to login scripts or captchas. Jobflow seamlessly integrates with `browser-cookie3` to extract cookies directly from your active, day-to-day local Firefox session and injects them into the headless Playwright scraper. It naturally bypasses strict login walls (like LinkedIn and Indeed) because it's using your actual authenticated session!
 - **Master Knowledge Base**: Store your entire career history—every project, bullet point, skill, and certification—in one centralized Master Profile database. 
-- **AI Match Scoring**: Automatically grades incoming job leads against your Master Profile skills to bubble up your best opportunities.
-- **Generative AI Resume Tailoring**: Connects to Gemini to analyze a specific Job Description and intelligently extract the precise experiences, skills, and bullets from your Master Profile that best match the job. It even rewrites bullets for maximum ATS impact.
-- **Interactive Builder**: Review and manually edit the AI's suggestions in a sleek web UI. Add, remove, or modify experiences, projects, and skills.
-- **ATS-Optimized PDF Export**: Generates pixel-perfect, highly professional resumes using traditional executive fonts (Garamond/Georgia) directly to PDF via WeasyPrint.
+- **Generative AI Resume Tailoring**: Click "Generate Tailored Resume" on an approved job, and Google's Gemini AI analyzes the specific Job Description to intelligently extract the precise experiences, skills, and projects from your Master Profile that best match the job. It even rewrites bullets for maximum ATS impact.
+- **Interactive Builder & Live PDF Preview**: Review and manually edit the AI's suggestions in a sleek web UI. Everything auto-saves. Click "Preview" to instantly render a **Live 1-Page PDF** (using your browser's native PDF engine) to see exactly how your resume looks before exporting.
+- **ATS-Optimized PDF Export**: Generates pixel-perfect, highly professional resumes using traditional executive fonts directly to PDF via WeasyPrint.
 
 ## 🛠️ Architecture & Tech Stack
 
 - **Backend**: FastAPI (Python 3.10+)
-- **Database**: PostgreSQL (via SQLAlchemy & Alembic) + SQLite (for local testing)
-- **AI Engine**: Google Gemini (v1beta API) using `gemini-3.6-flash` with robust fallback layers (2.5-flash, pro-latest).
+- **Database**: PostgreSQL / SQLite (via SQLAlchemy & Alembic)
+- **Scraping Engine**: Playwright + `browser-cookie3` (Firefox Native Integration) + BeautifulSoup4.
+- **AI Engine**: Google Gemini (v1beta API) using `gemini-3.5-flash` with robust fallback retry layers for rate limits (HTTP 429).
 - **Templating & UI**: Jinja2, TailwindCSS, FontAwesome.
 - **PDF Generation**: WeasyPrint.
-- **Ingestion**: Custom Universal Web Reader (`BeautifulSoup4` + `Requests`) paired with LLM extraction.
 
 ## 📂 Project Structure
 ```text
@@ -29,7 +29,7 @@ jobflow/
 │   ├── models/         # SQLAlchemy ORM definitions (User, Job, Profile, Resume)
 │   ├── routers/        # FastAPI Endpoints (Dashboard, Jobs, Resumes, Applications)
 │   ├── schemas/        # Pydantic validation models
-│   └── services/       # Core business logic (Universal Importer, AI Context Builder, Resume Tailor)
+│   └── services/       # Core business logic (Universal Importer, AI Tailor, Playwright Scraper)
 ├── static/             # Static assets (CSS/JS)
 ├── templates/          # Jinja2 HTML Templates (UI, Builder, Dashboard, PDF Layouts)
 └── README.md
@@ -40,7 +40,6 @@ jobflow/
 1. **Environment Setup:**
    Create a `.env` file in the root directory:
    ```env
-   DATABASE_URL="postgresql://user:pass@localhost:5432/jobflow"
    GEMINI_API_KEY="your_google_gemini_api_key"
    ADMIN_PASSWORD="your_secure_password"
    SECRET_KEY="your_jwt_secret"
@@ -60,12 +59,13 @@ jobflow/
 
 4. **Run the Application:**
    ```bash
-   uvicorn src.main:app --reload --port 8080
+   uvicorn src.main:app --reload --port 8001
    ```
-   Open `http://localhost:8080` in your browser. Default login relies on the `ADMIN_PASSWORD` defined in your `.env`.
+   Open `http://localhost:8001` in your browser. Default login relies on the `ADMIN_PASSWORD` defined in your `.env`.
 
 ## 🔄 The Pipeline Workflow
-1. **Import**: Click "Import Job Link" on the dashboard and paste a URL from any job board to pull it into the `NEW` pipeline.
-2. **Filter**: Use the built-in Match Score and keyword filters to flush out bad leads into the `SKIPPED` bin (or hit "Empty Trash" to hard-delete them).
-3. **Approve**: Click "Approve & Tailor" on a good lead. Gemini will instantly write your custom resume based on the Job Description.
-4. **Build & Export**: Edit the AI suggestions in the Builder. Click "Save & Download PDF" when ready!
+1. **Triage / Add Link**: Paste a URL from any job board. Jobflow borrows your Firefox cookies to bypass the login wall and grabs the basic info in < 3 seconds.
+2. **Review & Approve**: The job lands in your "New" dashboard. If it looks good, click "Tailor Resume".
+3. **AI Generation**: Gemini extracts requirements and maps them to your Master Profile, writing a highly targeted resume draft. (Cached instantly to prevent wasting quota).
+4. **Edit & Live Preview**: Tweak bullets in the Interactive Builder. Hit "Preview" to instantly render the PDF on screen without downloading it.
+5. **Export**: Export the final A4-formatted PDF and apply!

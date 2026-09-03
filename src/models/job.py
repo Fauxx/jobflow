@@ -18,5 +18,7 @@ class Job(Base):
     workplace_type = Column(String, nullable=True)
     experience_level = Column(String, nullable=True)
     
+    raw_scraped_text = Column(Text, nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     scraped_at = Column(DateTime(timezone=True), server_default=func.now())

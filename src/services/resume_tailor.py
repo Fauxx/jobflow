@@ -19,6 +19,8 @@ from src.core.config import settings
 class TailoredBullet(BaseModel):
     original_text: str = Field(description="The original bullet from the candidate's profile")
     tailored_text: str = Field(description="AI-rephrased version optimized for this job")
+    highly_recommended: bool = Field(description="True if this is an absolute perfect match for the job description")
+    reason: str = Field(description="Brief reason why this bullet was recommended or not")
 
 
 class TailoredExperience(BaseModel):
@@ -26,7 +28,7 @@ class TailoredExperience(BaseModel):
     title: str
     location: str = ""
     date_range: str = ""
-    bullets: List[TailoredBullet] = []
+    bullets: List[TailoredBullet] = Field(description="Generate 6-8 tailored bullets even if they won't all fit, prioritizing matches with the JD.")
 
 
 class TailoredProject(BaseModel):
@@ -34,15 +36,15 @@ class TailoredProject(BaseModel):
     role: str = ""
     date_range: str = ""
     tech_stack: str = ""
-    bullets: List[TailoredBullet] = []
+    bullets: List[TailoredBullet] = Field(description="Generate 4-6 tailored bullets even if they won't all fit.")
 
 
 class TailoredResume(BaseModel):
     """The full AI-suggested resume. Every field is a suggestion the user can edit."""
     summary: str = Field(description="AI-written professional summary tailored to this job")
     skills: List[str] = Field(description="A flat list of the most relevant skills for this job")
-    experiences: List[TailoredExperience] = Field(description="Selected experiences with tailored bullets")
-    projects: List[TailoredProject] = Field(description="Selected projects relevant to this job")
+    experiences: List[TailoredExperience] = Field(description="Selected experiences with over-generated tailored bullets")
+    projects: List[TailoredProject] = Field(description="Selected projects with over-generated bullets")
     certifications: List[str] = Field(default_factory=list)
     matched_skills: List[str] = Field(default_factory=list, description="Skills candidate has that JD wants")
     missing_skills: List[str] = Field(default_factory=list, description="Skills JD wants that candidate lacks")
@@ -60,10 +62,7 @@ class ResumeTailorService:
         # 1. Build the full candidate context as markdown
         candidate_context = build_context(db, job, user_id)
 
-        # 2. Extract structured requirements from JD
-        jd_requirements = extract_jd_requirements(job.description or "")
-
-        # 3. Call AI to generate tailored resume sections
+        # 2. Call AI to generate tailored resume sections directly from the Job Description
         prompt = f"""You are a Fact-Anchored Resume Tailoring Engine.
 
 STRICT RULES:
@@ -80,10 +79,8 @@ Title: {job.title}
 Company: {job.company}
 Location: {job.location or 'Not specified'}
 
-### Job Requirements (Extracted)
-{json.dumps(jd_requirements, indent=2)}
-
 ### Full Job Description
+Read this description carefully, extract the core requirements mentally, and use them to tailor the resume:
 {job.description or 'No description available'}
 
 ---
@@ -110,7 +107,9 @@ Generate a tailored resume for THIS specific job. Return JSON with this exact st
       "bullets": [
         {{
           "original_text": "The exact original bullet from the candidate profile",
-          "tailored_text": "The rephrased version optimized for this JD"
+          "tailored_text": "The rephrased version optimized for this JD",
+          "highly_recommended": true,
+          "reason": "Directly matches the cloud infrastructure requirement"
         }}
       ]
     }}
@@ -125,7 +124,9 @@ Generate a tailored resume for THIS specific job. Return JSON with this exact st
       "bullets": [
         {{
           "original_text": "Original bullet",
-          "tailored_text": "Tailored bullet"
+          "tailored_text": "Tailored bullet",
+          "highly_recommended": false,
+          "reason": "Good context but not strictly requested by JD"
         }}
       ]
     }}
@@ -138,9 +139,9 @@ Generate a tailored resume for THIS specific job. Return JSON with this exact st
 }}
 
 IMPORTANT:
-- Generate comprehensive suggestions. The user will manually trim them in the UI.
+- OVER-GENERATE BULLETS: For each experience, generate 6-8 strong, tailored bullets. For projects, generate 4-6. The user will manually filter them in the UI.
+- HIGHLY RECOMMENDED: Set `highly_recommended` to `true` for the 3 or 4 absolute best bullets in each section that perfectly match the JD.
 - Select all highly relevant experiences and projects.
-- For each experience, pick 4-6 strong, tailored bullets.
 - Output a single, flat list of the most relevant skills.
 - Every tailored_text must have a corresponding real original_text from the profile.
 """
