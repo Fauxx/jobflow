@@ -542,6 +542,10 @@
             btn.disabled = false;
         }
         
+        function openCoverLetterPreview() {
+            updateCoverLetterPreview();
+            document.getElementById("cl-preview-modal").classList.remove("hidden");
+        }
         function updateCoverLetterPreview() {
             const box = document.getElementById("cover-letter-box");
             const preview = document.getElementById("cl-preview-content");
@@ -592,13 +596,13 @@
             btn.disabled = false;
         }
     </script>
-    <!-- Cover Letter Modal (Dashboard) -->
+    <!-- Cover Letter Editor Modal -->
     <div id="cover-letter-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center hidden">
-        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-6xl relative flex flex-col h-[90vh]">
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-4xl relative flex flex-col h-[80vh]">
             <input type="hidden" id="cl-job-id">
             <div class="flex justify-between items-center mb-4 shrink-0">
                 <div>
-                    <h2 class="text-xl font-black text-white mb-1"><i class="fa-solid fa-envelope text-green-400 mr-2"></i>Cover Letter Generator & Live Preview</h2>
+                    <h2 class="text-xl font-black text-white mb-1"><i class="fa-solid fa-envelope text-green-400 mr-2"></i>Cover Letter Generator</h2>
                     <p class="text-xs text-gray-400">Instantly generate a tailored cover letter using your profile and the job description.</p>
                 </div>
                 <button onclick="document.getElementById('cover-letter-modal').classList.add('hidden')" class="text-gray-500 hover:text-white transition bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center">
@@ -607,9 +611,14 @@
             </div>
             
             <div class="flex justify-between items-center mb-4 shrink-0">
-                <button onclick="generateCoverLetter()" id="btn-generate-cl" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i><span>Draft Cover Letter</span>
-                </button>
+                <div class="flex space-x-3">
+                    <button onclick="generateCoverLetter()" id="btn-generate-cl" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i><span>Draft Cover Letter</span>
+                    </button>
+                    <button onclick="openCoverLetterPreview()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-xl text-sm transition flex items-center space-x-2 shadow-lg">
+                        <i class="fa-solid fa-eye"></i><span>Print Preview</span>
+                    </button>
+                </div>
                 <div class="flex space-x-4">
                     <button onclick="downloadCoverLetterPDF()" id="btn-dl-cl-pdf" class="text-red-400 hover:text-red-300 text-xs font-bold transition flex items-center space-x-1 border border-red-500/30 bg-red-500/10 px-3 py-1.5 rounded-lg">
                         <i class="fa-solid fa-file-pdf"></i><span>Download PDF</span>
@@ -620,16 +629,26 @@
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-6 flex-1 overflow-hidden">
-                <!-- Editor -->
-                <textarea id="cover-letter-box" oninput="updateCoverLetterPreview()" class="w-full h-full bg-gray-950 border border-gray-800 rounded-xl p-6 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Click 'Draft Cover Letter' to write a context-aware cover letter based on this job's description and your profile."></textarea>
-                
-                <!-- Live Preview Paper -->
-                <div class="flex-1 overflow-auto bg-gray-950 border border-gray-800 rounded-xl p-4 flex justify-center custom-scroll relative">
-                    <div class="absolute top-2 left-2 bg-gray-800 px-2 py-1 rounded text-[10px] text-gray-400 font-bold tracking-widest uppercase">Live Print Preview</div>
-                    <div id="cl-paper-box" class="bg-white text-black shadow-2xl relative overflow-hidden mt-6" style="width: 8.27in; min-height: 11.69in; padding: 1in; font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.6; white-space: pre-wrap;">
-                        <div id="cl-preview-content"></div>
-                    </div>
+            <!-- Editor -->
+            <textarea id="cover-letter-box" oninput="updateCoverLetterPreview()" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-xl p-6 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Click 'Draft Cover Letter' to write a context-aware cover letter based on this job's description and your profile."></textarea>
+        </div>
+    </div>
+
+    <!-- Cover Letter Preview Modal -->
+    <div id="cl-preview-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[70] flex items-center justify-center hidden">
+        <div class="flex flex-col w-full h-full max-w-5xl p-6 relative">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center space-x-4">
+                    <h3 class="text-xl font-bold text-white"><i class="fa-solid fa-envelope text-green-400 mr-2"></i>Cover Letter Live Print Preview</h3>
+                </div>
+                <button onclick="document.getElementById('cl-preview-modal').classList.add('hidden')" class="text-gray-400 hover:text-white transition bg-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-auto flex justify-center custom-scroll pb-10">
+                <div id="cl-paper-box" class="bg-white text-black shadow-2xl relative overflow-hidden" style="width: 8.27in; min-height: 11.69in; padding: 1in; font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.6; white-space: pre-wrap;">
+                    <div id="cl-preview-content"></div>
                 </div>
             </div>
         </div>
