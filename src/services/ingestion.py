@@ -37,11 +37,25 @@ class UniversalScraperService:
             try:
                 import browser_cookie3
                 domain_name = urlparse(url).netloc.replace('www.', '')
-                # .load() automatically checks Chrome, Firefox, Edge, Safari, Brave, etc. across Windows/Mac/Linux!
-                cj = browser_cookie3.load(domain_name=domain_name)
+                
+                # .load() has a known bug crashing on NoneType for missing browsers.
+                # Safe fallback chain: try Firefox first, then Chrome, etc.
+                cj = None
+                for browser_fn in [browser_cookie3.firefox, browser_cookie3.chrome, browser_cookie3.edge, browser_cookie3.safari, browser_cookie3.brave]:
+                    try:
+                        cj = browser_fn(domain_name=domain_name)
+                        # We have to consume the iterator to test if it worked without erroring
+                        cj_list = list(cj)
+                        if len(cj_list) > 0:
+                            cj = cj_list
+                            break
+                    except Exception:
+                        continue
+                        
                 pw_cookies = []
-                for c in cj:
-                    if domain_name in c.domain:
+                if cj:
+                    for c in cj:
+                        if domain_name in c.domain:
                         pw_cookies.append({
                             'name': c.name,
                             'value': c.value,
