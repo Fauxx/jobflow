@@ -58,8 +58,8 @@
             </div>
             <div class="flex space-x-3">
                 <button onclick="runScraper()" id="scrape-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition flex items-center space-x-2 shadow-lg shadow-blue-900/20">
-                    <i class="fa-solid fa-radar-pro"></i>
-                    <span>Discover New Jobs</span>
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Import Job</span>
                 </button>
             </div>
         </header>
@@ -296,6 +296,7 @@
                 });
                 
                 if(res.ok) {
+                    alert("Job successfully extracted and added to your triage queue!");
                     window.location.reload();
                 } else {
                     const data = await res.json();
