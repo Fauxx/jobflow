@@ -4,15 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume Builder — {{ job.title }} @ {{ job.company }}</title>
-        function openCoverLetterPreview() {
-            updateCoverLetterPreview();
-            document.getElementById("cl-preview-modal").classList.remove("hidden");
-        }
-        function updateCoverLetterPreview() {
-            const box = document.getElementById("cover-letter-box");
-            const preview = document.getElementById("cl-preview-content");
-            if(preview) preview.textContent = box.value;
-        }
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -279,19 +270,14 @@
                     <h3 class="text-xl font-bold text-white"><i class="fa-solid fa-envelope text-green-400 mr-2"></i>Cover Letter Live Print Preview</h3>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button onclick="downloadCoverLetterPDF()" id="btn-dl-cl-pdf-preview" class="text-red-400 hover:text-red-300 text-sm font-bold transition flex items-center space-x-2 border border-red-500/30 bg-red-500/10 px-4 py-2 rounded-lg shadow-lg">
-                        <i class="fa-solid fa-file-pdf"></i><span>Download PDF</span>
-                    </button>
                     <button onclick="document.getElementById('cl-preview-modal').classList.add('hidden')" class="text-gray-400 hover:text-white transition bg-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg">
                         <i class="fa-solid fa-xmark text-xl"></i>
                     </button>
                 </div>
             </div>
             
-            <div class="flex-1 overflow-auto flex justify-center custom-scroll pb-10">
-                <div id="cl-paper-box" class="bg-white text-black shadow-2xl relative overflow-hidden" style="width: 8.27in; min-height: 11.69in; padding: 1in; font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.6; white-space: pre-wrap;">
-                    <div id="cl-preview-content"></div>
-                </div>
+            <div class="flex-1 overflow-hidden flex justify-center pb-2">
+                <iframe id="cl-pdf-iframe" class="w-full h-full rounded-xl bg-white border-none shadow-2xl"></iframe>
             </div>
         </div>
     </div>
@@ -800,7 +786,6 @@
                 if (res.ok) {
                     const data = await res.json();
                     box.value = data.draft;
-                    updateCoverLetterPreview();
                 } else {
                     box.value = "Error generating cover letter. The API might be rate limited.";
                 }
@@ -854,14 +839,30 @@
             btn.innerHTML = originalHtml;
             btn.disabled = false;
         }
-        function openCoverLetterPreview() {
-            updateCoverLetterPreview();
+        async function openCoverLetterPreview() {
+            const content = document.getElementById('cover-letter-box').value;
+            const jobId = document.getElementById('cl-job-id').value;
+            if(!content.trim()) { alert("Please draft a cover letter first!"); return; }
+            
             document.getElementById("cl-preview-modal").classList.remove("hidden");
-        }
-        function updateCoverLetterPreview() {
-            const box = document.getElementById("cover-letter-box");
-            const preview = document.getElementById("cl-preview-content");
-            if(preview) preview.textContent = box.value;
+            const iframe = document.getElementById('cl-pdf-iframe');
+            
+            try {
+                const res = await fetch(`/applications/${jobId}/cover-letter/pdf`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ content })
+                });
+                if(res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    iframe.src = url;
+                } else {
+                    alert("Failed to generate PDF preview.");
+                }
+            } catch(e) {
+                alert("Network error.");
+            }
         }
     </script>
 </body>
