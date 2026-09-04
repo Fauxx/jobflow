@@ -152,6 +152,8 @@
                                     </div>
                                     {% if sub_val == 'APPROVED' %}
                                     <a href="/resume/builder/{{ job.id }}" onclick="event.stopPropagation()" class="text-[9px] bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded transition shadow">Review & Send</a>
+                                    {% else %}
+                                    <a href="/resume/builder/{{ job.id }}" onclick="event.stopPropagation()" class="text-[10px] text-gray-500 hover:text-white transition" title="View Tailored Resume"><i class="fa-solid fa-file-contract"></i></a>
                                     {% endif %}
                                 </div>
                                 
@@ -194,7 +196,10 @@
             <div class="flex justify-between items-start mb-4">
                 <div>
                     <h2 class="text-xl font-black text-white mb-1"><i class="fa-solid fa-chart-line text-blue-500 mr-2"></i>Pipeline Details</h2>
-                    <p id="pipeline-job-title" class="text-gray-400 text-sm font-bold"></p>
+                    <div class="flex items-center space-x-3 mt-2">
+                        <p id="pipeline-job-title" class="text-gray-400 text-sm font-bold"></p>
+                        <a href="#" id="pipeline-resume-link" class="text-[10px] bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white px-2 py-1 rounded transition flex items-center"><i class="fa-solid fa-file-contract mr-1"></i>View Resume</a>
+                    </div>
                 </div>
                 <button onclick="document.getElementById('pipeline-modal').classList.add('hidden')" class="text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
@@ -319,6 +324,7 @@
         function openPipelineModal(id, title, company, recruiter, date, expected, offered, notes) {
             document.getElementById('pipeline-job-id').value = id;
             document.getElementById('pipeline-job-title').innerText = title + " @ " + company;
+            document.getElementById('pipeline-resume-link').href = "/resume/builder/" + id;
             document.getElementById('pipe-recruiter').value = recruiter;
             if(date) document.getElementById('pipe-date').value = date.split('T')[0];
             else document.getElementById('pipe-date').value = "";
