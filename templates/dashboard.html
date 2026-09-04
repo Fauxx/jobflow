@@ -257,11 +257,24 @@
                 <button onclick="document.getElementById('jd-modal').classList.add('hidden')" class="text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             
-            <p id="jd-job-title" class="text-blue-400 text-sm font-bold mb-4 shrink-0"></p>
+            <div class="grid grid-cols-2 gap-4 mb-4 shrink-0">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Job Title</label>
+                    <input type="text" id="jd-title-input" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Company</label>
+                    <input type="text" id="jd-company-input" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Location (Optional)</label>
+                    <input type="text" id="jd-location-input" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
             
             <div class="flex-1 flex flex-col min-h-0 mb-4">
-                <p class="text-xs text-gray-500 mb-2">If the automated scraper failed (e.g. Cloudflare blocked it), you can manually paste the full job description below. Jobflow will use this text for AI Tailoring.</p>
-                <textarea id="jd-content" class="w-full flex-1 bg-gray-900 border border-gray-700 rounded-xl p-4 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Loading description or waiting for manual paste..."></textarea>
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Job Description</label>
+                <textarea id="jd-content" class="w-full flex-1 bg-gray-900 border border-gray-700 rounded-xl p-4 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Paste full job description here..."></textarea>
             </div>
             
             <div class="flex justify-end space-x-3 shrink-0">
@@ -396,25 +409,39 @@
             } catch(e) { box.value = "Error generating draft."; }
             btn.innerHTML = 'Draft Email'; btn.disabled = false;
         }
-        async function editJobDescription(jobId, title) {
+        async function editJobDescription(jobId) {
             document.getElementById('jd-job-id').value = jobId;
-            document.getElementById('jd-job-title').innerText = title;
+            const titleInput = document.getElementById('jd-title-input');
+            const companyInput = document.getElementById('jd-company-input');
+            const locationInput = document.getElementById('jd-location-input');
             const contentBox = document.getElementById('jd-content');
+            
+            titleInput.value = "Loading...";
+            companyInput.value = "Loading...";
+            locationInput.value = "Loading...";
             contentBox.value = "Fetching description...";
             document.getElementById('jd-modal').classList.remove('hidden');
             
             try {
                 const res = await fetch(`/jobs/${jobId}/details`);
                 const data = await res.json();
+                titleInput.value = data.title || '';
+                companyInput.value = data.company || '';
+                locationInput.value = data.location || '';
                 contentBox.value = data.description || '';
             } catch (e) {
-                contentBox.value = "Failed to load job description.";
+                contentBox.value = "Failed to load job details.";
             }
         }
         
         async function saveJobDescription() {
             const jobId = document.getElementById('jd-job-id').value;
-            const content = document.getElementById('jd-content').value;
+            const payload = {
+                title: document.getElementById('jd-title-input').value,
+                company: document.getElementById('jd-company-input').value,
+                location: document.getElementById('jd-location-input').value,
+                description: document.getElementById('jd-content').value
+            };
             const btn = document.getElementById('btn-save-jd');
             const original = btn.innerHTML;
             
@@ -425,9 +452,10 @@
                 await fetch(`/jobs/${jobId}/details`, {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ description: content })
+                    body: JSON.stringify(payload)
                 });
                 document.getElementById('jd-modal').classList.add('hidden');
+                window.location.reload();
             } catch(e) {
                 alert("Failed to save description.");
             }

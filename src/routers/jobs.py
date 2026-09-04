@@ -74,10 +74,18 @@ async def get_job_details(job_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Job not found")
         
     IngestionService.hydrate_job(db, job)
-    return {"description": job.description or "No description available."}
+    return {
+        "title": job.title,
+        "company": job.company,
+        "location": job.location,
+        "description": job.description or ""
+    }
 
 class JobDetailsUpdate(BaseModel):
-    description: str
+    title: Optional[str] = None
+    company: Optional[str] = None
+    location: Optional[str] = None
+    description: Optional[str] = None
 
 @router.put("/{job_id}/details")
 async def update_job_details(job_id: int, payload: JobDetailsUpdate, db: Session = Depends(get_db)):
@@ -85,6 +93,14 @@ async def update_job_details(job_id: int, payload: JobDetailsUpdate, db: Session
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
         
-    job.description = payload.description
+    if payload.title is not None:
+        job.title = payload.title
+    if payload.company is not None:
+        job.company = payload.company
+    if payload.location is not None:
+        job.location = payload.location
+    if payload.description is not None:
+        job.description = payload.description
+        
     db.commit()
     return {"status": "success"}
