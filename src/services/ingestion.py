@@ -56,12 +56,12 @@ class UniversalScraperService:
                 if cj:
                     for c in cj:
                         if domain_name in c.domain:
-                        pw_cookies.append({
-                            'name': c.name,
-                            'value': c.value,
-                            'domain': c.domain,
-                            'path': c.path
-                        })
+                            pw_cookies.append({
+                                'name': c.name,
+                                'value': c.value,
+                                'domain': c.domain,
+                                'path': c.path
+                            })
                 if pw_cookies:
                     context.add_cookies(pw_cookies)
                     print(f"Loaded {len(pw_cookies)} native Firefox cookies for {domain_name}")
