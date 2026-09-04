@@ -4,6 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jobflow CRM</title>
+        async function editJobDescription(jobId, title) {
+            document.getElementById('jd-job-id').value = jobId;
+            document.getElementById('jd-job-title').innerText = title;
+            const contentBox = document.getElementById('jd-content');
+            contentBox.value = "Fetching description...";
+            document.getElementById('jd-modal').classList.remove('hidden');
+            
+            try {
+                const res = await fetch(`/jobs/${jobId}/details`);
+                const data = await res.json();
+                contentBox.value = data.description || '';
+            } catch (e) {
+                contentBox.value = "Failed to load job description.";
+            }
+        }
+        
+        async function saveJobDescription() {
+            const jobId = document.getElementById('jd-job-id').value;
+            const content = document.getElementById('jd-content').value;
+            const btn = document.getElementById('btn-save-jd');
+            const original = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+            btn.disabled = true;
+            
+            try {
+                await fetch(`/jobs/${jobId}/details`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ description: content })
+                });
+                document.getElementById('jd-modal').classList.add('hidden');
+            } catch(e) {
+                alert("Failed to save description.");
+            }
+            
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
@@ -80,6 +119,9 @@
                             <a href="/resume/builder/{{ job.id }}" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold py-1.5 px-2 rounded-lg text-center transition">
                                 <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Tailor
                             </a>
+                            <button onclick="editJobDescription({{ job.id }}, '{{ job.title | replace("'", "\\'") }}')" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-[11px] font-bold py-1.5 px-3 rounded-lg transition" title="Edit Job Description">
+                                <i class="fa-solid fa-align-left"></i>
+                            </button>
                             <button onclick="updateStatus({{ job.id }}, 'SKIPPED', true)" class="bg-gray-700 hover:bg-red-900/50 text-gray-400 hover:text-red-400 text-[11px] font-bold py-1.5 px-3 rounded-lg transition" title="Skip">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
@@ -246,6 +288,30 @@
     </div>
 
     <script>
+    <!-- JD Edit Modal -->
+    <div id="jd-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-4xl relative flex flex-col h-[85vh]">
+            <input type="hidden" id="jd-job-id">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h2 class="text-xl font-black text-white"><i class="fa-solid fa-file-lines text-blue-500 mr-2"></i>Edit Job Description</h2>
+                <button onclick="document.getElementById('jd-modal').classList.add('hidden')" class="text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <p id="jd-job-title" class="text-blue-400 text-sm font-bold mb-4 shrink-0"></p>
+            
+            <div class="flex-1 flex flex-col min-h-0 mb-4">
+                <p class="text-xs text-gray-500 mb-2">If the automated scraper failed (e.g. Cloudflare blocked it), you can manually paste the full job description below. Jobflow will use this text for AI Tailoring.</p>
+                <textarea id="jd-content" class="w-full flex-1 bg-gray-900 border border-gray-700 rounded-xl p-4 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Loading description or waiting for manual paste..."></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-3 shrink-0">
+                <button onclick="document.getElementById('jd-modal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-gray-400 hover:text-white text-sm font-bold transition">Cancel</button>
+                <button onclick="saveJobDescription()" id="btn-save-jd" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-floppy-disk"></i><span>Save Description</span>
+                </button>
+            </div>
+        </div>
+    </div>
         function runScraper() { document.getElementById('scrape-modal').classList.remove('hidden'); }
         
         async function executeScrape() {
@@ -368,6 +434,45 @@
                 box.value = data.draft;
             } catch(e) { box.value = "Error generating draft."; }
             btn.innerHTML = 'Draft Email'; btn.disabled = false;
+        }
+        async function editJobDescription(jobId, title) {
+            document.getElementById('jd-job-id').value = jobId;
+            document.getElementById('jd-job-title').innerText = title;
+            const contentBox = document.getElementById('jd-content');
+            contentBox.value = "Fetching description...";
+            document.getElementById('jd-modal').classList.remove('hidden');
+            
+            try {
+                const res = await fetch(`/jobs/${jobId}/details`);
+                const data = await res.json();
+                contentBox.value = data.description || '';
+            } catch (e) {
+                contentBox.value = "Failed to load job description.";
+            }
+        }
+        
+        async function saveJobDescription() {
+            const jobId = document.getElementById('jd-job-id').value;
+            const content = document.getElementById('jd-content').value;
+            const btn = document.getElementById('btn-save-jd');
+            const original = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+            btn.disabled = true;
+            
+            try {
+                await fetch(`/jobs/${jobId}/details`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ description: content })
+                });
+                document.getElementById('jd-modal').classList.add('hidden');
+            } catch(e) {
+                alert("Failed to save description.");
+            }
+            
+            btn.innerHTML = original;
+            btn.disabled = false;
         }
     </script>
 </body>

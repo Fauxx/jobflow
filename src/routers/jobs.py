@@ -75,3 +75,16 @@ async def get_job_details(job_id: int, db: Session = Depends(get_db)):
         
     IngestionService.hydrate_job(db, job)
     return {"description": job.description or "No description available."}
+
+class JobDetailsUpdate(BaseModel):
+    description: str
+
+@router.put("/{job_id}/details")
+async def update_job_details(job_id: int, payload: JobDetailsUpdate, db: Session = Depends(get_db)):
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    job.description = payload.description
+    db.commit()
+    return {"status": "success"}
