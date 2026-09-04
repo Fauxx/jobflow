@@ -440,3 +440,43 @@ async def get_pipeline_details(job_id: int, db: Session = Depends(get_db)):
         "date_offer": app.date_offer.isoformat() if app.date_offer else "",
         "date_rejected": app.date_rejected.isoformat() if app.date_rejected else ""
     }
+
+@router.get("/{job_id}/generate-cover-letter")
+async def generate_cover_letter(job_id: int, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
+    job = db.query(Job).filter(Job.id == job_id).first()
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+    
+    if not app or not job:
+        raise HTTPException(status_code=404, detail="Not found")
+        
+    from src.services.job_analysis import call_gemini
+    
+    # We'll use the tailored resume as the context for the cover letter
+    import json
+    resume_ctx = app.ai_draft_json if app.ai_draft_json else "{}"
+    if resume_ctx and len(resume_ctx) > 3000:
+        resume_ctx = resume_ctx[:3000]
+        
+    job_ctx = f"Company: {job.company}\nTitle: {job.title}\nDescription:\n{job.description[:3000]}"
+    
+    prompt = f"""You are an expert career coach writing a highly compelling, modern cover letter for a candidate.
+    
+CANDIDATE'S TAILORED RESUME DATA (JSON):
+{resume_ctx}
+
+JOB INFO:
+{job_ctx}
+
+INSTRUCTIONS:
+1. Write a professional, punchy, and confident cover letter.
+2. Address it to "Hiring Manager" if no name is available.
+3. Keep it to 3-4 short paragraphs.
+4. Highlight 1-2 core strengths of the candidate that perfectly align with the job description.
+5. End with a strong call to action.
+6. Do NOT output any markdown formatting (like ```), just the raw text of the letter.
+7. Use placeholders like [Your Phone Number] if needed, but fill in the Candidate's Name and Company Name automatically based on the resume data.
+"""
+    draft = call_gemini(prompt, json_mode=False)
+    return {"draft": draft}

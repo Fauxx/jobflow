@@ -30,6 +30,9 @@
             </div>
         </div>
         <div class="flex items-center space-x-3">
+            <button onclick="document.getElementById('cover-letter-modal').classList.remove('hidden')" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-xl text-sm transition flex items-center space-x-2 border border-gray-700">
+                <i class="fa-solid fa-envelope text-green-400"></i><span>Cover Letter</span>
+            </button>
             <button onclick="generateResume()" id="gen-btn" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-xl text-sm transition flex items-center space-x-2 border border-gray-700">
                 <i class="fa-solid fa-wand-magic-sparkles text-blue-400"></i><span>Generate AI Suggestions</span>
             </button>
@@ -218,6 +221,32 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Cover Letter Modal -->
+    <div id="cover-letter-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-4xl relative flex flex-col h-[80vh]">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <div>
+                    <h2 class="text-xl font-black text-white mb-1"><i class="fa-solid fa-envelope text-green-400 mr-2"></i>Cover Letter Generator</h2>
+                    <p class="text-xs text-gray-400">Instantly generate a tailored cover letter using your profile and the job description.</p>
+                </div>
+                <button onclick="document.getElementById('cover-letter-modal').classList.add('hidden')" class="text-gray-500 hover:text-white transition bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="flex justify-between items-center mb-2 shrink-0">
+                <button onclick="generateCoverLetter()" id="btn-generate-cl" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i><span>Draft Cover Letter</span>
+                </button>
+                <button onclick="copyCoverLetter()" class="text-gray-400 hover:text-white text-xs font-bold transition flex items-center space-x-1">
+                    <i class="fa-solid fa-copy"></i><span id="cl-copy-text">Copy to Clipboard</span>
+                </button>
+            </div>
+            
+            <textarea id="cover-letter-box" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-xl p-6 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Click 'Draft Cover Letter' to write a context-aware cover letter based on this job's description and your profile."></textarea>
         </div>
     </div>
     
@@ -711,6 +740,38 @@
             tmsg.textContent = msg;
             toast.className = `fixed bottom-5 right-5 ${isError ? 'bg-red-600' : 'bg-green-600'} text-white py-3 px-6 rounded-xl shadow-lg font-bold z-50 flex items-center space-x-2`;
             setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+        // ─── Cover Letter ───
+        async function generateCoverLetter() {
+            const btn = document.getElementById('btn-generate-cl');
+            const box = document.getElementById('cover-letter-box');
+            
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Drafting...</span>';
+            btn.disabled = true;
+            box.value = "AI is drafting your cover letter... This may take a few seconds.";
+            
+            try {
+                const res = await fetch(`/applications/${jobId}/generate-cover-letter`);
+                if (res.ok) {
+                    const data = await res.json();
+                    box.value = data.draft;
+                } else {
+                    box.value = "Error generating cover letter. The API might be rate limited.";
+                }
+            } catch (e) {
+                box.value = "Network error while generating draft.";
+            }
+            
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i><span>Draft Cover Letter</span>';
+            btn.disabled = false;
+        }
+        
+        function copyCoverLetter() {
+            const box = document.getElementById('cover-letter-box');
+            box.select();
+            document.execCommand('copy');
+            document.getElementById('cl-copy-text').innerText = 'Copied!';
+            setTimeout(() => { document.getElementById('cl-copy-text').innerText = 'Copy to Clipboard'; }, 2000);
         }
     </script>
 </body>
