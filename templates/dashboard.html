@@ -5,6 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jobflow CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Cover_Letter.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } else {
+                    alert("Failed to generate PDF.");
+                }
+            } catch(e) {
+                alert("Network error.");
+            }
+            
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     <style>
@@ -203,6 +221,7 @@
                         <p id="pipeline-job-title" class="text-gray-400 text-sm font-bold"></p>
                         <a href="#" id="pipeline-resume-link" class="text-[10px] bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white px-2 py-1 rounded transition flex items-center"><i class="fa-solid fa-file-contract mr-1"></i>View Resume</a>
                         <button onclick="document.getElementById('pipeline-modal').classList.add('hidden'); editJobDescription(document.getElementById('pipeline-job-id').value);" class="text-[10px] bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white px-2 py-1 rounded transition flex items-center"><i class="fa-solid fa-align-left mr-1"></i>Edit JD</button>
+                        <button onclick="document.getElementById('pipeline-modal').classList.add('hidden'); document.getElementById('cl-job-id').value = document.getElementById('pipeline-job-id').value; document.getElementById('cover-letter-modal').classList.remove('hidden');" class="text-[10px] bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white px-2 py-1 rounded transition flex items-center"><i class="fa-solid fa-envelope mr-1 text-green-400"></i>Cover Letter</button>
                     </div>
                 </div>
                 <button onclick="document.getElementById('pipeline-modal').classList.add('hidden')" class="text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -514,6 +533,105 @@
             btn.innerHTML = original;
             btn.disabled = false;
         }
+        async function generateCoverLetter() {
+            const btn = document.getElementById('btn-generate-cl');
+            const box = document.getElementById('cover-letter-box');
+            const jobId = document.getElementById('cl-job-id').value;
+            
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Drafting...</span>';
+            btn.disabled = true;
+            box.value = "AI is drafting your cover letter... This may take a few seconds.";
+            
+            try {
+                const res = await fetch(`/applications/${jobId}/generate-cover-letter`);
+                if (res.ok) {
+                    const data = await res.json();
+                    box.value = data.draft;
+                } else {
+                    box.value = "Error generating cover letter. The API might be rate limited.";
+                }
+            } catch (e) {
+                box.value = "Network error while generating draft.";
+            }
+            
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i><span>Draft Cover Letter</span>';
+            btn.disabled = false;
+        }
+        
+        function copyCoverLetter() {
+            const box = document.getElementById('cover-letter-box');
+            box.select();
+            document.execCommand('copy');
+            document.getElementById('cl-copy-text').innerText = 'Copied!';
+            setTimeout(() => { document.getElementById('cl-copy-text').innerText = 'Copy'; }, 2000);
+        }
+        
+        async function downloadCoverLetterPDF() {
+            const content = document.getElementById('cover-letter-box').value;
+            const jobId = document.getElementById('cl-job-id').value;
+            if(!content.trim()) { alert("Please draft a cover letter first!"); return; }
+            
+            const btn = document.getElementById('btn-dl-cl-pdf');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Generating...</span>';
+            btn.disabled = true;
+            
+            try {
+                const res = await fetch(`/applications/${jobId}/cover-letter/pdf`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ content })
+                });
+                if(res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Cover_Letter.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } else {
+                    alert("Failed to generate PDF.");
+                }
+            } catch(e) {
+                alert("Network error.");
+            }
+            
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
     </script>
+    <!-- Cover Letter Modal (Dashboard) -->
+    <div id="cover-letter-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center hidden">
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-4xl relative flex flex-col h-[80vh]">
+            <input type="hidden" id="cl-job-id">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <div>
+                    <h2 class="text-xl font-black text-white mb-1"><i class="fa-solid fa-envelope text-green-400 mr-2"></i>Cover Letter Generator</h2>
+                    <p class="text-xs text-gray-400">Instantly generate a tailored cover letter using your profile and the job description.</p>
+                </div>
+                <button onclick="document.getElementById('cover-letter-modal').classList.add('hidden')" class="text-gray-500 hover:text-white transition bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="flex justify-between items-center mb-2 shrink-0">
+                <button onclick="generateCoverLetter()" id="btn-generate-cl" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i><span>Draft Cover Letter</span>
+                </button>
+                <div class="flex space-x-4">
+                    <button onclick="downloadCoverLetterPDF()" id="btn-dl-cl-pdf" class="text-red-400 hover:text-red-300 text-xs font-bold transition flex items-center space-x-1 border border-red-500/30 bg-red-500/10 px-3 py-1.5 rounded-lg">
+                        <i class="fa-solid fa-file-pdf"></i><span>Download PDF</span>
+                    </button>
+                    <button onclick="copyCoverLetter()" class="text-gray-400 hover:text-white text-xs font-bold transition flex items-center space-x-1 border border-gray-700 bg-gray-800 px-3 py-1.5 rounded-lg">
+                        <i class="fa-solid fa-copy"></i><span id="cl-copy-text">Copy</span>
+                    </button>
+                </div>
+            </div>
+            
+            <textarea id="cover-letter-box" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-xl p-6 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Click 'Draft Cover Letter' to write a context-aware cover letter based on this job's description and your profile."></textarea>
+        </div>
+    </div>
 </body>
 </html>
