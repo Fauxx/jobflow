@@ -461,8 +461,22 @@ async def generate_cover_letter(job_id: int, db: Session = Depends(get_db)):
         
     job_ctx = f"Company: {job.company}\nTitle: {job.title}\nDescription:\n{job.description[:3000]}"
     
-    prompt = f"""You are an expert career coach writing a highly compelling, modern cover letter for a candidate.
+    # Extract Contact Info from Master Profile
+    contact_info = ""
+    if profile:
+        contact_info += f"Name: {profile.name or 'Unknown'}\n"
+        contact_info += f"Location: {profile.location or 'Unknown'}\n"
+        if profile.phone: contact_info += f"Phone: {profile.phone}\n"
+        if profile.user and profile.user.email: contact_info += f"Email: {profile.user.email}\n"
+        if profile.linkedin_url: contact_info += f"LinkedIn: {profile.linkedin_url}\n"
+        if profile.github_url: contact_info += f"GitHub: {profile.github_url}\n"
+        if profile.portfolio_url: contact_info += f"Portfolio: {profile.portfolio_url}\n"
     
+    prompt = f"""You are an expert career coach writing a highly compelling, modern cover letter for a candidate.
+
+CANDIDATE CONTACT INFO:
+{contact_info}
+
 CANDIDATE'S TAILORED RESUME DATA (JSON):
 {resume_ctx}
 
@@ -476,7 +490,7 @@ INSTRUCTIONS:
 4. Highlight 1-2 core strengths of the candidate that perfectly align with the job description.
 5. End with a strong call to action.
 6. Do NOT output any markdown formatting (like ```), just the raw text of the letter.
-7. Use placeholders like [Your Phone Number] if needed, but fill in the Candidate's Name and Company Name automatically based on the resume data.
+7. Use the exact Candidate Contact Info provided at the top of the cover letter in a modern header format. DO NOT use placeholders like [Your Phone Number] or [Your Email]—use the actual data provided. If a specific piece of contact info is missing, just omit that line entirely.
 """
     draft = call_gemini(prompt, json_mode=False)
     return {"draft": draft}
