@@ -480,3 +480,26 @@ INSTRUCTIONS:
 """
     draft = call_gemini(prompt, json_mode=False)
     return {"draft": draft}
+
+class CoverLetterPDFRequest(BaseModel):
+    content: str
+
+@router.post("/{job_id}/cover-letter/pdf")
+async def generate_cover_letter_pdf(request: Request, job_id: int, payload: CoverLetterPDFRequest, db: Session = Depends(get_db)):
+    if not WEASYPRINT_AVAILABLE:
+        return JSONResponse({"error": "WeasyPrint not installed"}, status_code=500)
+        
+    user = get_current_user(db)
+    job = db.query(Job).filter(Job.id == job_id).first()
+    
+    html_content = templates.TemplateResponse(
+        request=request,
+        name="applications/cover_letter_print.html",
+        context={"request": request, "content": payload.content}
+    ).body.decode()
+    
+    tmp_pdf = tempfile.mktemp(suffix=".pdf")
+    WeasyHTML(string=html_content).write_pdf(tmp_pdf)
+    
+    filename = f"Cover_Letter_{job.company}.pdf".replace(" ", "_")
+    return FileResponse(tmp_pdf, filename=filename, media_type="application/pdf")

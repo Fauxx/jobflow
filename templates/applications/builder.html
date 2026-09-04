@@ -241,9 +241,14 @@
                 <button onclick="generateCoverLetter()" id="btn-generate-cl" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
                     <i class="fa-solid fa-wand-magic-sparkles"></i><span>Draft Cover Letter</span>
                 </button>
-                <button onclick="copyCoverLetter()" class="text-gray-400 hover:text-white text-xs font-bold transition flex items-center space-x-1">
-                    <i class="fa-solid fa-copy"></i><span id="cl-copy-text">Copy to Clipboard</span>
-                </button>
+                <div class="flex space-x-4">
+                    <button onclick="downloadCoverLetterPDF()" id="btn-dl-cl-pdf" class="text-red-400 hover:text-red-300 text-xs font-bold transition flex items-center space-x-1 border border-red-500/30 bg-red-500/10 px-3 py-1.5 rounded-lg">
+                        <i class="fa-solid fa-file-pdf"></i><span>Download PDF</span>
+                    </button>
+                    <button onclick="copyCoverLetter()" class="text-gray-400 hover:text-white text-xs font-bold transition flex items-center space-x-1 border border-gray-700 bg-gray-800 px-3 py-1.5 rounded-lg">
+                        <i class="fa-solid fa-copy"></i><span id="cl-copy-text">Copy</span>
+                    </button>
+                </div>
             </div>
             
             <textarea id="cover-letter-box" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-xl p-6 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Click 'Draft Cover Letter' to write a context-aware cover letter based on this job's description and your profile."></textarea>
@@ -771,7 +776,42 @@
             box.select();
             document.execCommand('copy');
             document.getElementById('cl-copy-text').innerText = 'Copied!';
-            setTimeout(() => { document.getElementById('cl-copy-text').innerText = 'Copy to Clipboard'; }, 2000);
+            setTimeout(() => { document.getElementById('cl-copy-text').innerText = 'Copy'; }, 2000);
+        }
+        
+        async function downloadCoverLetterPDF() {
+            const content = document.getElementById('cover-letter-box').value;
+            if(!content.trim()) { alert("Please draft a cover letter first!"); return; }
+            
+            const btn = document.getElementById('btn-dl-cl-pdf');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Generating...</span>';
+            btn.disabled = true;
+            
+            try {
+                const res = await fetch(`/applications/${jobId}/cover-letter/pdf`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ content })
+                });
+                if(res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Cover_Letter.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } else {
+                    alert("Failed to generate PDF.");
+                }
+            } catch(e) {
+                alert("Network error.");
+            }
+            
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
         }
     </script>
 </body>
