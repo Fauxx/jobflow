@@ -34,10 +34,15 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
                  .filter((Application.id == None) | (Application.status == "NEW"))\
                  .order_by(Job.date_posted.desc().nulls_last()).all()
     else:
-        jobs = db.query(Job).join(Application).filter(
+        results = db.query(Job, Application).join(Application).filter(
             Application.user_id == user.id,
             Application.status == status
         ).order_by(Job.date_posted.desc().nulls_last()).all()
+        
+        jobs = []
+        for job, app in results:
+            job.app_details = app
+            jobs.append(job)
 
     # Calculate match score for ALL jobs regardless of tab
     user_skills = set()
@@ -67,6 +72,7 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
     elif status == "APPROVED":
         jobs.sort(key=lambda j: j.match_score, reverse=True)
 
+    import datetime
     context = {
         "request": request,
         "jobs": jobs,
@@ -74,6 +80,7 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
         "current_status": status,
         "total_pages": 1,
         "page": 1,
-        "resume": {"name": profile.name if profile else "Not set"}
+        "resume": {"name": profile.name if profile else "Not set"},
+        "now": datetime.datetime.now
     }
     return templates.TemplateResponse(request=request, name="dashboard.html", context=context)

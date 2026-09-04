@@ -333,3 +333,74 @@ async def empty_trash(db: Session = Depends(get_db)):
         
     db.commit()
     return {"status": "success", "deleted": len(job_ids)}
+
+class PipelineUpdate(BaseModel):
+    sub_status: str
+
+class PipelineDetails(BaseModel):
+    recruiter_name: Optional[str] = None
+    interview_date: Optional[str] = None
+    salary_expected: Optional[str] = None
+    salary_offered: Optional[str] = None
+    pipeline_notes: Optional[str] = None
+
+@router.put("/{job_id}/pipeline")
+async def update_pipeline_status(job_id: int, payload: PipelineUpdate, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    app.sub_status = payload.sub_status
+    db.commit()
+    return {"status": "success", "sub_status": app.sub_status}
+
+@router.put("/{job_id}/details")
+async def update_pipeline_details(job_id: int, payload: PipelineDetails, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    if payload.recruiter_name is not None: app.recruiter_name = payload.recruiter_name
+    if payload.salary_expected is not None: app.salary_expected = payload.salary_expected
+    if payload.salary_offered is not None: app.salary_offered = payload.salary_offered
+    if payload.pipeline_notes is not None: app.pipeline_notes = payload.pipeline_notes
+    
+    if payload.interview_date:
+        import dateutil.parser
+        try:
+            app.interview_date = dateutil.parser.parse(payload.interview_date)
+        except Exception:
+            pass
+            
+    db.commit()
+    return {"status": "success"}
+
+@router.get("/{job_id}/generate-follow-up")
+async def generate_follow_up(job_id: int, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
+    job = db.query(Job).filter(Job.id == job_id).first()
+    
+    if not app or not job:
+        raise HTTPException(status_code=404, detail="Not found")
+        
+    from src.services.job_analysis import call_gemini
+    
+    prompt = f"""You are an expert career coach drafting a follow-up email for a candidate.
+Company: {job.company}
+Role: {job.title}
+Recruiter Name: {app.recruiter_name or 'Hiring Manager'}
+Current Status: {app.sub_status}
+Notes from Interview/Process: {app.pipeline_notes or 'None'}
+
+Draft a polite, professional, and concise follow-up email (no more than 3 paragraphs). 
+If the status is APPLIED, ask for an update on the application.
+If the status is SCREENING or INTERVIEWING, thank them for their time and reiterate interest.
+If the status is OFFER, ask about next steps or politely negotiate if the user mentioned it in the notes.
+
+Return ONLY the email body (with a subject line at the top). Do not wrap in markdown or json.
+"""
+    draft = call_gemini(prompt, json_mode=False)
+    return {"draft": draft}
+

@@ -137,6 +137,60 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="job-grid">
+        {% if current_status == 'APPLIED' %}
+        
+        <!-- Kanban Board -->
+        <div class="flex overflow-x-auto gap-6 pb-6 h-[calc(100vh-250px)] items-start">
+            
+            {% set columns = [
+                ('APPLIED', 'Applied', 'text-gray-400 bg-gray-900 border-gray-700'),
+                ('SCREENING', 'HR Screen', 'text-blue-400 bg-blue-900/20 border-blue-800'),
+                ('INTERVIEW', 'Interviewing', 'text-purple-400 bg-purple-900/20 border-purple-800'),
+                ('OFFER', 'Offer', 'text-green-400 bg-green-900/20 border-green-800'),
+                ('REJECTED', 'Rejected', 'text-red-400 bg-red-900/20 border-red-800')
+            ] %}
+            
+            {% for sub_val, sub_label, sub_style in columns %}
+            <div class="flex-none w-80 bg-gray-900/50 rounded-xl border border-gray-800 flex flex-col h-full overflow-hidden kanban-column" ondrop="drop(event, '{{ sub_val }}')" ondragover="allowDrop(event)">
+                <div class="p-3 border-b border-gray-800 font-bold text-sm tracking-wide {{ sub_style }} rounded-t-xl text-center">
+                    {{ sub_label }}
+                </div>
+                <div class="p-3 flex-1 overflow-y-auto space-y-3 kanban-list" id="col-{{ sub_val }}">
+                    {% for job in jobs %}
+                        {% if job.app_details and job.app_details.sub_status == sub_val %}
+                        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 cursor-grab hover:border-blue-500 shadow-md kanban-card relative" draggable="true" ondragstart="drag(event, {{ job.id }})" id="kanban-card-{{ job.id }}" onclick="openPipelineModal({{ job.id }}, '{{ job.title | replace("'", "\\'") }}', '{{ job.company | replace("'", "\\'") }}', '{{ job.app_details.recruiter_name or "" }}', '{{ job.app_details.interview_date.isoformat() if job.app_details.interview_date else "" }}', '{{ job.app_details.salary_expected or "" }}', '{{ job.app_details.salary_offered or "" }}', '{{ job.app_details.pipeline_notes | replace("'", "\\'") | replace("\n", " ") or "" }}')">
+                            
+                            <!-- Stale indicator -->
+                            {% if sub_val == 'APPLIED' %}
+                                {% set days_stale = ((now() - job.app_details.updated_at.replace(tzinfo=None)).days) if job.app_details.updated_at else 0 %}
+                                {% if days_stale > 7 %}
+                                <div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" title="Stale: Follow up!"></div>
+                                {% endif %}
+                            {% endif %}
+                            
+                            <h4 class="text-sm font-bold text-white leading-tight mb-1">{{ job.title }}</h4>
+                            <p class="text-xs text-blue-400 font-semibold mb-3">{{ job.company }}</p>
+                            
+                            {% if job.app_details.interview_date %}
+                            <div class="text-[10px] text-gray-400 mb-1 flex items-center"><i class="fa-solid fa-calendar-day mr-1"></i> {{ job.app_details.interview_date.strftime('%b %d, %Y') }}</div>
+                            {% endif %}
+                            {% if job.app_details.salary_offered %}
+                            <div class="text-[10px] text-green-400 font-bold flex items-center"><i class="fa-solid fa-sack-dollar mr-1"></i> {{ job.app_details.salary_offered }}</div>
+                            {% endif %}
+                            
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+        {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+        </div>
+        
+        {% else %}
+        
+        <!-- Standard Job Grid -->
             {% for job in jobs %}
             <div class="job-card-item bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition shadow-lg flex flex-col" 
                  id="job-card-{{ job.id }}"
@@ -217,6 +271,7 @@
                 {% endif %}
             </div>
             {% endfor %}
+        {% endif %}
         </div>
 
     </main>
@@ -236,6 +291,53 @@
     </div>
     
     <!-- Import Modal -->
+    <!-- Pipeline Modal -->
+    <div id="pipeline-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-2xl relative">
+            <input type="hidden" id="pipeline-job-id">
+            <h2 class="text-xl font-black text-white mb-1"><i class="fa-solid fa-chart-line text-blue-500 mr-2"></i>Pipeline Details</h2>
+            <p id="pipeline-job-title" class="text-gray-400 text-sm mb-5 font-bold"></p>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Recruiter / Contact Name</label>
+                    <input type="text" id="pipe-recruiter" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Next Interview Date</label>
+                    <input type="date" id="pipe-date" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Expected Salary</label>
+                    <input type="text" id="pipe-expected" placeholder="$120,000" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Offered Salary</label>
+                    <input type="text" id="pipe-offered" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-green-500">
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Interview Notes / Feedback</label>
+                <textarea id="pipe-notes" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+            
+            <div class="bg-blue-900/10 border border-blue-900/30 rounded-xl p-4 mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-bold text-blue-400"><i class="fa-solid fa-robot mr-1"></i> AI Follow-Up Generator</h3>
+                    <button onclick="generateFollowUp()" id="btn-generate-followup" class="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded shadow transition">Draft Email</button>
+                </div>
+                <textarea id="pipe-email-draft" rows="4" placeholder="Click 'Draft Email' to write a context-aware follow-up email." class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-gray-300 text-xs font-mono"></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button onclick="document.getElementById('pipeline-modal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-gray-400 hover:text-white text-sm font-bold transition">Close</button>
+                <button onclick="savePipelineDetails()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-floppy-disk"></i><span>Save Details</span>
+                </button>
+            </div>
+        </div>
+    </div>
     <div id="scrape-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
         <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md relative">
             <h2 class="text-xl font-black text-white mb-2"><i class="fa-solid fa-link text-blue-500 mr-2"></i>Import Job URL</h2>
@@ -258,6 +360,106 @@
     </div>
 
     <script>
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev, id) {
+            ev.dataTransfer.setData("text", id);
+        }
+
+        async function drop(ev, newSubStatus) {
+            ev.preventDefault();
+            var id = ev.dataTransfer.getData("text");
+            var card = document.getElementById("kanban-card-" + id);
+            
+            // Find the closest .kanban-list column
+            let target = ev.target;
+            while(target && !target.classList.contains('kanban-list')) {
+                if (target.classList.contains('kanban-column')) {
+                    target = target.querySelector('.kanban-list');
+                    break;
+                }
+                target = target.parentElement;
+            }
+            if(target) {
+                target.appendChild(card);
+            }
+            
+            // Update backend
+            try {
+                await fetch(`/applications/${id}/pipeline`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ sub_status: newSubStatus })
+                });
+            } catch(e) {
+                console.error("Failed to update status");
+            }
+        }
+
+        function openPipelineModal(id, title, company, recruiter, date, expected, offered, notes) {
+            document.getElementById('pipeline-job-id').value = id;
+            document.getElementById('pipeline-job-title').innerText = title + " @ " + company;
+            
+            document.getElementById('pipe-recruiter').value = recruiter;
+            if(date) document.getElementById('pipe-date').value = date.split('T')[0];
+            else document.getElementById('pipe-date').value = "";
+            document.getElementById('pipe-expected').value = expected;
+            document.getElementById('pipe-offered').value = offered;
+            document.getElementById('pipe-notes').value = notes;
+            
+            document.getElementById('pipe-email-draft').value = "";
+            
+            document.getElementById('pipeline-modal').classList.remove('hidden');
+        }
+
+        async function savePipelineDetails() {
+            const id = document.getElementById('pipeline-job-id').value;
+            const payload = {
+                recruiter_name: document.getElementById('pipe-recruiter').value,
+                interview_date: document.getElementById('pipe-date').value,
+                salary_expected: document.getElementById('pipe-expected').value,
+                salary_offered: document.getElementById('pipe-offered').value,
+                pipeline_notes: document.getElementById('pipe-notes').value
+            };
+            
+            const btn = event.currentTarget;
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+            
+            await fetch(`/applications/${id}/details`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            
+            btn.innerHTML = original;
+            window.location.reload();
+        }
+
+        async function generateFollowUp() {
+            const id = document.getElementById('pipeline-job-id').value;
+            const btn = document.getElementById('btn-generate-followup');
+            const box = document.getElementById('pipe-email-draft');
+            
+            btn.innerHTML = 'Generating...';
+            btn.disabled = true;
+            box.value = "AI is drafting your email...";
+            
+            try {
+                const res = await fetch(`/applications/${id}/generate-follow-up`);
+                const data = await res.json();
+                box.value = data.draft;
+            } catch(e) {
+                box.value = "Error generating draft.";
+            }
+            
+            btn.innerHTML = 'Draft Email';
+            btn.disabled = false;
+        }
+
         async function showJobDescription(jobId, title) {
             const modalContent = document.getElementById('jd-modal-content');
             document.getElementById('jd-modal-title').innerText = title;
