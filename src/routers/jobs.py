@@ -13,13 +13,13 @@ from src.core.dependencies import get_current_user
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 class JobSaveRequest(BaseModel):
-    external_job_id: Optional[str]
+    external_job_id: Optional[str] = None
     source: str
     source_url: str
     title: str
     company: str
-    location: Optional[str]
-    description: Optional[str]
+    location: Optional[str] = None
+    description: Optional[str] = None
 
 @router.post("/save")
 async def save_job(job_data: JobSaveRequest, db: Session = Depends(get_db)):
