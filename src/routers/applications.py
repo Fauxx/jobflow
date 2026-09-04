@@ -350,7 +350,23 @@ async def update_pipeline_status(job_id: int, payload: PipelineUpdate, db: Sessi
     app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
+        
     app.sub_status = payload.sub_status
+    
+    # Track the date for the new status
+    from datetime import datetime, timezone
+    now_utc = datetime.now(timezone.utc)
+    if app.sub_status == "APPLIED" and not app.date_applied:
+        app.date_applied = now_utc
+    elif app.sub_status == "SCREENING" and not app.date_screening:
+        app.date_screening = now_utc
+    elif app.sub_status == "INTERVIEW" and not app.date_interview:
+        app.date_interview = now_utc
+    elif app.sub_status == "OFFER" and not app.date_offer:
+        app.date_offer = now_utc
+    elif app.sub_status == "REJECTED" and not app.date_rejected:
+        app.date_rejected = now_utc
+        
     db.commit()
     return {"status": "success", "sub_status": app.sub_status}
 
@@ -404,3 +420,23 @@ Return ONLY the email body (with a subject line at the top). Do not wrap in mark
     draft = call_gemini(prompt, json_mode=False)
     return {"draft": draft}
 
+
+@router.get("/{job_id}/details")
+async def get_pipeline_details(job_id: int, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+        
+    return {
+        "recruiter_name": app.recruiter_name or "",
+        "interview_date": app.interview_date.isoformat() if app.interview_date else "",
+        "salary_expected": app.salary_expected or "",
+        "salary_offered": app.salary_offered or "",
+        "pipeline_notes": app.pipeline_notes or "",
+        "date_applied": app.date_applied.isoformat() if app.date_applied else "",
+        "date_screening": app.date_screening.isoformat() if app.date_screening else "",
+        "date_interview": app.date_interview.isoformat() if app.date_interview else "",
+        "date_offer": app.date_offer.isoformat() if app.date_offer else "",
+        "date_rejected": app.date_rejected.isoformat() if app.date_rejected else ""
+    }

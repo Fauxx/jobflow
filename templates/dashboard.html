@@ -232,6 +232,13 @@
                 <textarea id="pipe-notes" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"></textarea>
             </div>
             
+            <div class="mb-4 bg-gray-800/50 rounded-xl p-3 border border-gray-700">
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-2">Stage Timeline</label>
+                <div class="flex items-center text-[11px] text-gray-400 font-mono overflow-x-auto" id="pipe-timeline">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            
             <div class="bg-blue-900/10 border border-blue-900/30 rounded-xl p-4 mb-6">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="text-sm font-bold text-blue-400"><i class="fa-solid fa-robot mr-1"></i> AI Follow-Up Generator</h3>
@@ -362,18 +369,61 @@
             }
         }
 
-        function openPipelineModal(id, title, company, recruiter, date, expected, offered, notes) {
+        async function openPipelineModal(id, title, company) {
             document.getElementById('pipeline-job-id').value = id;
             document.getElementById('pipeline-job-title').innerText = title + " @ " + company;
             document.getElementById('pipeline-resume-link').href = "/resume/builder/" + id;
-            document.getElementById('pipe-recruiter').value = recruiter;
-            if(date) document.getElementById('pipe-date').value = date.split('T')[0];
-            else document.getElementById('pipe-date').value = "";
-            document.getElementById('pipe-expected').value = expected;
-            document.getElementById('pipe-offered').value = offered;
-            document.getElementById('pipe-notes').value = notes;
             document.getElementById('pipe-email-draft').value = "";
+            
+            // Set Loading state
+            document.getElementById('pipe-recruiter').value = "Loading...";
+            document.getElementById('pipe-expected').value = "Loading...";
+            document.getElementById('pipe-offered').value = "Loading...";
+            document.getElementById('pipe-notes').value = "Loading...";
+            document.getElementById('pipe-timeline').innerHTML = "Loading...";
+            
             document.getElementById('pipeline-modal').classList.remove('hidden');
+            
+            try {
+                const res = await fetch(`/applications/${id}/details`);
+                const data = await res.json();
+                
+                document.getElementById('pipe-recruiter').value = data.recruiter_name || "";
+                if(data.interview_date) document.getElementById('pipe-date').value = data.interview_date.split('T')[0];
+                else document.getElementById('pipe-date').value = "";
+                document.getElementById('pipe-expected').value = data.salary_expected || "";
+                document.getElementById('pipe-offered').value = data.salary_offered || "";
+                document.getElementById('pipe-notes').value = data.pipeline_notes || "";
+                
+                // Build Timeline
+                let timelineHtml = "";
+                const stages = [
+                    {key: 'date_applied', label: 'Applied'},
+                    {key: 'date_screening', label: 'Screened'},
+                    {key: 'date_interview', label: 'Interview'},
+                    {key: 'date_offer', label: 'Offer'},
+                    {key: 'date_rejected', label: 'Rejected'}
+                ];
+                
+                for (const stage of stages) {
+                    if (data[stage.key]) {
+                        const d = new Date(data[stage.key]);
+                        const dateStr = d.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+                        timelineHtml += `<div class="flex items-center"><span class="text-blue-500 font-bold mr-1">${stage.label}:</span> <span class="text-gray-300">${dateStr}</span></div>`;
+                        timelineHtml += `<div class="text-gray-600 px-2">•</div>`;
+                    }
+                }
+                
+                // Remove trailing bullet
+                if(timelineHtml.endsWith(`<div class="text-gray-600 px-2">•</div>`)) {
+                    timelineHtml = timelineHtml.slice(0, -39);
+                }
+                
+                document.getElementById('pipe-timeline').innerHTML = timelineHtml || "No timeline data available.";
+                
+            } catch (e) {
+                document.getElementById('pipe-notes').value = "Error loading details.";
+            }
         }
 
         async function savePipelineDetails() {

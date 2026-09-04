@@ -21,6 +21,13 @@ class Application(Base):
     salary_offered = Column(String, nullable=True)
     pipeline_notes = Column(String, nullable=True)
     
+    # Pipeline Timestamps
+    date_applied = Column(DateTime(timezone=True), nullable=True)
+    date_screening = Column(DateTime(timezone=True), nullable=True)
+    date_interview = Column(DateTime(timezone=True), nullable=True)
+    date_offer = Column(DateTime(timezone=True), nullable=True)
+    date_rejected = Column(DateTime(timezone=True), nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
