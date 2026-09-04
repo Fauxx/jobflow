@@ -138,5 +138,13 @@ class UniversalScraperService:
 
     @staticmethod
     def hydrate_job(db: Session, job: Job):
-        # Deprecated: Hydration will happen dynamically during the "Approve" phase
-        pass
+        if job.description and not job.description.startswith("[AI Extraction"):
+            return
+            
+        if job.raw_scraped_text:
+            # Skip the extra Gemini API calls to prevent 429 Rate Limits.
+            # Gemini is perfectly capable of parsing the raw stripped text directly.
+            job.description = job.raw_scraped_text[:20000] # Limit size if needed
+            job.requirements = "{}"
+            
+            db.commit()

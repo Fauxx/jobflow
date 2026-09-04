@@ -8,25 +8,33 @@ from src.core.config import settings
 
 import time
 
-def call_gemini(prompt: str) -> str:
+def call_gemini(prompt: str, json_mode: bool = True) -> str:
     """Call Gemini API and return raw text response."""
     api_key = settings.GEMINI_API_KEY
     if not api_key:
         print("[Gemini] No GEMINI_API_KEY set in .env")
-        return "{}"
+        return "{}" if json_mode else ""
 
     models = [
+        "gemini-3.6-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
         "gemini-3.5-flash",
-        "gemini-flash-latest"
+        "gemini-flash-latest",
+        "gemini-pro-latest"
     ]
     
     headers = {"Content-Type": "application/json"}
+    
+    generation_config = {
+        "temperature": 0.1
+    }
+    if json_mode:
+        generation_config["responseMimeType"] = "application/json"
+        
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 0.1
-        }
+        "generationConfig": generation_config
     }
 
     for model in models:
@@ -40,8 +48,8 @@ def call_gemini(prompt: str) -> str:
                     data = response.json()
                     return data["candidates"][0]["content"]["parts"][0]["text"].strip()
                 elif response.status_code == 429:
-                    print(f"[Gemini] Model {model} hit rate limit (429). Retrying in 5s... ({retries} left)")
-                    time.sleep(5)
+                    print(f"[Gemini] Model {model} hit rate limit (429). Retrying in 10s... ({retries} left)")
+                    time.sleep(10)
                     retries -= 1
                     continue
                 elif response.status_code in [503, 404]:
@@ -56,7 +64,7 @@ def call_gemini(prompt: str) -> str:
                 break
             
     print("[Gemini] All fallback models exhausted or rate limit hit.")
-    return "{}"
+    return "{}" if json_mode else ""
 
 
 def extract_jd_requirements(jd_text: str) -> dict:
@@ -105,7 +113,7 @@ RAW TEXT:
 ---
 """
     try:
-        resp = call_gemini(prompt)
+        resp = call_gemini(prompt, json_mode=False)
         # Strip potential markdown fences if the model wraps the whole thing in ```markdown
         if resp.startswith("```markdown"):
             resp = resp.split("```markdown", 1)[1].rsplit("```", 1)[0].strip()
