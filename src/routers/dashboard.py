@@ -29,22 +29,40 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
     from sqlalchemy.orm import outerjoin, selectinload
     profile = db.query(UserProfile).options(selectinload(UserProfile.skills)).filter(UserProfile.user_id == user.id).first()
     
-    if status == "NEW":
-        jobs = db.query(Job).outerjoin(Application, (Job.id == Application.job_id) & (Application.user_id == user.id))\
-                 .filter((Application.id == None) | (Application.status == "NEW"))\
-                 .order_by(Job.date_posted.desc().nulls_last()).all()
-    else:
+    import datetime
+    
+    # Check if we are viewing the trash
+    if status == "SKIPPED":
         results = db.query(Job, Application).join(Application).filter(
             Application.user_id == user.id,
-            Application.status == status
+            Application.status == "SKIPPED"
         ).order_by(Job.date_posted.desc().nulls_last()).all()
-        
         jobs = []
         for job, app in results:
             job.app_details = app
             jobs.append(job)
+        triage_jobs = []
+        pipeline_jobs = []
+    else:
+        # 1. Fetch Triage Jobs (NEW)
+        triage_jobs = db.query(Job).outerjoin(Application, (Job.id == Application.job_id) & (Application.user_id == user.id))\
+                     .filter((Application.id == None) | (Application.status == "NEW"))\
+                     .order_by(Job.date_posted.desc().nulls_last()).all()
+                     
+        # 2. Fetch Pipeline Jobs (APPROVED, APPLIED)
+        results = db.query(Job, Application).join(Application).filter(
+            Application.user_id == user.id,
+            Application.status.in_(["APPROVED", "APPLIED"])
+        ).order_by(Job.date_posted.desc().nulls_last()).all()
+        pipeline_jobs = []
+        for job, app in results:
+            job.app_details = app
+            pipeline_jobs.append(job)
+            
+        jobs = [] # Not used in unified view
+        counts["NEW"] = len(triage_jobs)
 
-    # Calculate match score for ALL jobs regardless of tab
+    # Calculate match score for ALL fetched jobs
     user_skills = set()
     if profile and profile.skills:
         for s in profile.skills:
@@ -54,7 +72,8 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
                     user_skills.add(p)
     user_skills = list(user_skills)
         
-    for job in jobs:
+    all_jobs_to_score = jobs + triage_jobs + pipeline_jobs
+    for job in all_jobs_to_score:
         if not user_skills:
             job.match_score = 0
             continue
@@ -65,17 +84,15 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
         max_skills_expected = min(len(user_skills), 15) 
         job.match_score = int(min((matches / max_skills_expected) * 100, 100)) if max_skills_expected > 0 else 0
 
-    if status == "NEW":
-        import datetime
-        jobs.sort(key=lambda j: (j.match_score, j.date_posted.timestamp() if j.date_posted else 0), reverse=True)
-        counts["NEW"] = len(jobs)
-    elif status == "APPROVED":
-        jobs.sort(key=lambda j: j.match_score, reverse=True)
+    if triage_jobs:
+        triage_jobs.sort(key=lambda j: (j.match_score, j.date_posted.timestamp() if j.date_posted else 0), reverse=True)
 
     import datetime
     context = {
         "request": request,
         "jobs": jobs,
+        "triage_jobs": triage_jobs,
+        "pipeline_jobs": pipeline_jobs,
         "counts": counts,
         "current_status": status,
         "total_pages": 1,
