@@ -11,6 +11,7 @@ class Application(Base):
     status = Column(String, default="NEW", nullable=False)
     email_subject = Column(String, nullable=True)
     email_body = Column(String, nullable=True)
+    cover_letter = Column(String, nullable=True)
     ai_draft_json = Column(String, nullable=True)
     
     # CRM Pipeline fields

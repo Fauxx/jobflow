@@ -119,7 +119,7 @@
                         </button>
                     </div>
                     <textarea id="field-summary" rows="4" placeholder="Click 'Generate AI Suggestions' to get a tailored summary, then edit it here..."
-                        class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition resize-none leading-relaxed"></textarea>
+                        class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition resize-none leading-relaxed">{{ app.cover_letter or '' }}</textarea>
                 </div>
 
                 <!-- SKILLS -->
@@ -243,6 +243,9 @@
                     <button onclick="generateCoverLetter()" id="btn-generate-cl" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
                         <i class="fa-solid fa-wand-magic-sparkles"></i><span>Draft Cover Letter</span>
                     </button>
+                    <button onclick="saveCoverLetter()" id="btn-save-cl" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+                        <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
+                    </button>
                     <button onclick="openCoverLetterPreview()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-xl text-sm transition flex items-center space-x-2 shadow-lg">
                         <i class="fa-solid fa-eye"></i><span>Print Preview</span>
                     </button>
@@ -258,7 +261,7 @@
             </div>
             
             <!-- Editor -->
-            <textarea id="cover-letter-box" oninput="updateCoverLetterPreview()" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-xl p-6 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Click 'Draft Cover Letter' to write a context-aware cover letter based on this job's description and your profile."></textarea>
+            <textarea id="cover-letter-box" onblur="saveCoverLetter()" oninput="updateCoverLetterPreview()" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-xl p-6 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Click 'Draft Cover Letter' to write a context-aware cover letter based on this job's description and your profile.">{{ app.cover_letter or '' }}</textarea>
         </div>
     </div>
 
@@ -342,7 +345,7 @@
             // Skills
             const sc = document.getElementById('skills-container');
             sc.innerHTML = `
-                <textarea id="skills-input" rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500">${(data.skills || []).join(', ')}</textarea>
+                <textarea id="skills-input" rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500">${(data.skills || []).join(', ')}{{ app.cover_letter or '' }}</textarea>
                 <p class="text-[10px] text-gray-500 mt-1">Comma-separated list of skills.</p>
             `;
 
@@ -392,7 +395,7 @@
                 const tailored = b.tailored_text || b.original_text || '';
                 bulletsHtml += `
                     <div class="bullet-row">
-                        <textarea rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 resize-none exp-bullet">${tailored}</textarea>
+                        <textarea rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 resize-none exp-bullet">${tailored}{{ app.cover_letter or '' }}</textarea>
                         <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 text-xs mt-1"><i class="fa-solid fa-trash"></i></button>
                     </div>
                     ${original && original !== tailored ? `<p class="original-tooltip ml-1">Original: "${original}"</p>` : ''}
@@ -431,7 +434,7 @@
                 const tailored = b.tailored_text || b.original_text || '';
                 bulletsHtml += `
                     <div class="bullet-row">
-                        <textarea rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 resize-none proj-bullet">${tailored}</textarea>
+                        <textarea rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 resize-none proj-bullet">${tailored}{{ app.cover_letter or '' }}</textarea>
                         <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 text-xs mt-1"><i class="fa-solid fa-trash"></i></button>
                     </div>
                     ${original && original !== tailored ? `<p class="original-tooltip ml-1">Original: "${original}"</p>` : ''}
@@ -493,7 +496,7 @@
             const row = document.createElement('div');
             row.className = 'bullet-row';
             row.innerHTML = `
-                <textarea rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 resize-none ${prefix}-bullet" placeholder="Write your bullet point..."></textarea>
+                <textarea rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 resize-none ${prefix}-bullet" placeholder="Write your bullet point...">{{ app.cover_letter or '' }}</textarea>
                 <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 text-xs mt-1"><i class="fa-solid fa-trash"></i></button>
             `;
             container.appendChild(row);
@@ -774,6 +777,29 @@
         }
         // ─── Cover Letter ───
         async function generateCoverLetter() {
+        async function saveCoverLetter() {
+            const btn = document.getElementById('btn-save-cl');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+            btn.disabled = true;
+            
+            const jobId = document.getElementById('cl-job-id').value;
+            const content = document.getElementById('cover-letter-box').value;
+            
+            try {
+                await fetch(`/applications/${jobId}/cover-letter`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ content })
+                });
+                btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i><span>Saved</span>';
+                setTimeout(() => { btn.innerHTML = original; }, 2000);
+            } catch(e) {
+                alert('Failed to save cover letter.');
+                btn.innerHTML = original;
+            }
+            btn.disabled = false;
+        }
             const btn = document.getElementById('btn-generate-cl');
             const box = document.getElementById('cover-letter-box');
             
@@ -786,6 +812,7 @@
                 if (res.ok) {
                     const data = await res.json();
                     box.value = data.draft;
+                    saveCoverLetter();
                 } else {
                     box.value = "Error generating cover letter. The API might be rate limited.";
                 }

@@ -395,6 +395,7 @@
                 document.getElementById('pipe-expected').value = data.salary_expected || "";
                 document.getElementById('pipe-offered').value = data.salary_offered || "";
                 document.getElementById('pipe-notes').value = data.pipeline_notes || "";
+                document.getElementById('cover-letter-box').value = data.cover_letter || "";
                 
                 // Build Timeline
                 let timelineHtml = "";
@@ -458,6 +459,7 @@
                 const res = await fetch(`/applications/${id}/generate-follow-up`);
                 const data = await res.json();
                 box.value = data.draft;
+                    saveCoverLetter();
             } catch(e) { box.value = "Error generating draft."; }
             btn.innerHTML = 'Draft Email'; btn.disabled = false;
         }
@@ -516,6 +518,29 @@
             btn.disabled = false;
         }
         async function generateCoverLetter() {
+        async function saveCoverLetter() {
+            const btn = document.getElementById('btn-save-cl');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+            btn.disabled = true;
+            
+            const jobId = document.getElementById('cl-job-id').value;
+            const content = document.getElementById('cover-letter-box').value;
+            
+            try {
+                await fetch(`/applications/${jobId}/cover-letter`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ content })
+                });
+                btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i><span>Saved</span>';
+                setTimeout(() => { btn.innerHTML = original; }, 2000);
+            } catch(e) {
+                alert('Failed to save cover letter.');
+                btn.innerHTML = original;
+            }
+            btn.disabled = false;
+        }
             const btn = document.getElementById('btn-generate-cl');
             const box = document.getElementById('cover-letter-box');
             const jobId = document.getElementById('cl-job-id').value;
@@ -529,6 +554,7 @@
                 if (res.ok) {
                     const data = await res.json();
                     box.value = data.draft;
+                    saveCoverLetter();
                 } else {
                     box.value = "Error generating cover letter. The API might be rate limited.";
                 }
@@ -629,6 +655,9 @@
                     <button onclick="generateCoverLetter()" id="btn-generate-cl" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
                         <i class="fa-solid fa-wand-magic-sparkles"></i><span>Draft Cover Letter</span>
                     </button>
+                    <button onclick="saveCoverLetter()" id="btn-save-cl" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold py-2 px-4 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+                        <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
+                    </button>
                     <button onclick="openCoverLetterPreview()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-xl text-sm transition flex items-center space-x-2 shadow-lg">
                         <i class="fa-solid fa-eye"></i><span>Print Preview</span>
                     </button>
@@ -644,7 +673,7 @@
             </div>
             
             <!-- Editor -->
-            <textarea id="cover-letter-box" oninput="updateCoverLetterPreview()" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-xl p-6 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Click 'Draft Cover Letter' to write a context-aware cover letter based on this job's description and your profile."></textarea>
+            <textarea id="cover-letter-box" onblur="saveCoverLetter()" oninput="updateCoverLetterPreview()" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-xl p-6 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Click 'Draft Cover Letter' to write a context-aware cover letter based on this job's description and your profile."></textarea>
         </div>
     </div>
 

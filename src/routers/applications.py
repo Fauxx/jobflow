@@ -438,7 +438,8 @@ async def get_pipeline_details(job_id: int, db: Session = Depends(get_db)):
         "date_screening": app.date_screening.isoformat() if app.date_screening else "",
         "date_interview": app.date_interview.isoformat() if app.date_interview else "",
         "date_offer": app.date_offer.isoformat() if app.date_offer else "",
-        "date_rejected": app.date_rejected.isoformat() if app.date_rejected else ""
+        "date_rejected": app.date_rejected.isoformat() if app.date_rejected else "",
+        "cover_letter": app.cover_letter or ""
     }
 
 @router.get("/{job_id}/generate-cover-letter")
@@ -517,3 +518,16 @@ async def generate_cover_letter_pdf(request: Request, job_id: int, payload: Cove
     
     filename = f"Cover_Letter_{job.company}.pdf".replace(" ", "_")
     return FileResponse(tmp_pdf, filename=filename, media_type="application/pdf")
+from pydantic import BaseModel
+class CoverLetterSaveRequest(BaseModel):
+    content: str
+
+@router.put("/{job_id}/cover-letter")
+async def save_cover_letter(job_id: int, req: CoverLetterSaveRequest, db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Not found")
+    app.cover_letter = req.content
+    db.commit()
+    return {"status": "ok"}
