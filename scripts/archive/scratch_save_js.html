@@ -1,0 +1,23 @@
+        async function saveCoverLetter() {
+            const btn = document.getElementById('btn-save-cl');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+            btn.disabled = true;
+            
+            const jobId = document.getElementById('cl-job-id').value;
+            const content = document.getElementById('cover-letter-box').value;
+            
+            try {
+                await fetch(`/applications/${jobId}/cover-letter`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ content })
+                });
+                btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i><span>Saved</span>';
+                setTimeout(() => { btn.innerHTML = original; }, 2000);
+            } catch(e) {
+                alert('Failed to save cover letter.');
+                btn.innerHTML = original;
+            }
+            btn.disabled = false;
+        }

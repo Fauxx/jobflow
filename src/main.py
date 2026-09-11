@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
-from src.routers import dashboard, scraper, profile, jobs, resumes, auth, applications
+from src.routers import dashboard, scraper, profile, jobs, resumes, auth, applications, analytics
 from src.core.config import settings
 from src.core.database import engine
 from src.models import Base
@@ -24,9 +24,14 @@ async def auth_middleware(request: Request, call_next):
     
     # Check session cookie
     token = request.cookies.get(SESSION_COOKIE)
-    if not token or not verify_session_token(token):
+    user_id = verify_session_token(token) if token else None
+    
+    if not user_id:
         return RedirectResponse(url="/auth/login", status_code=302)
     
+    request.state.user_id = user_id
+    from src.core.auth import current_user_id
+    current_user_id.set(user_id)
     return await call_next(request)
 
 # Mount all routers
@@ -37,6 +42,7 @@ app.include_router(profile.router)
 app.include_router(jobs.router)
 app.include_router(resumes.router)
 app.include_router(applications.router)
+app.include_router(analytics.router)
 
 @app.get("/health")
 def health_check():

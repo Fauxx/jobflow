@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics — Jobflow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body { background-color: #0B0F19; color: #E2E8F0; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+
+        .kpi-card {
+            background: #111827;
+            border: 1px solid #1F2937;
+            border-radius: 12px;
+            padding: 20px 24px;
+            transition: border-color 0.2s;
+        }
+        .kpi-card:hover { border-color: #374151; }
+        .chart-card {
+            background: #111827;
+            border: 1px solid #1F2937;
+            border-radius: 12px;
+            padding: 20px 24px;
+        }
+        .funnel-bar { transition: width 0.6s ease; }
+        .status-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+
+    <!-- Navbar -->
+    <nav class="bg-gray-900 border-b border-gray-800 h-16 flex items-center justify-between px-6 flex-shrink-0 z-10 relative shadow-sm">
+        <div class="flex items-center space-x-8">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-bolt text-white text-sm"></i>
+                </div>
+                <h1 class="text-xl font-black tracking-tight text-white">Jobflow</h1>
+            </div>
+            <div class="hidden md:flex space-x-1">
+                <a href="/" class="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg font-bold text-sm transition">
+                    <i class="fa-solid fa-layer-group mr-2"></i>Pipeline
+                </a>
+                <a href="/profile" class="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg font-bold text-sm transition">
+                    <i class="fa-solid fa-user-gear mr-2"></i>Master Profile
+                </a>
+                <a href="/analytics" class="px-4 py-2 bg-gray-800 text-white rounded-lg font-bold text-sm transition">
+                    <i class="fa-solid fa-chart-bar mr-2"></i>Analytics
+                </a>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <a href="/auth/logout" class="text-gray-400 hover:text-white text-sm font-bold transition flex items-center">
+                <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i> Sign Out
+            </a>
+        </div>
+    </nav>
+
+    <!-- Page Body -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+        <!-- Page Header -->
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-black text-white">Job Search Analytics</h2>
+                <p class="text-gray-400 text-sm mt-0.5">An overview of your entire job pipeline performance.</p>
+            </div>
+            <a href="/" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center space-x-2">
+                <i class="fa-solid fa-arrow-left text-xs"></i>
+                <span>Back to Pipeline</span>
+            </a>
+        </div>
+
+        <!-- ── Row 1: KPI Cards ───────────────────────────────────────────── -->
+        <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
+
+            <div class="kpi-card col-span-1">
+                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Scraped</p>
+                <p class="text-3xl font-black text-white">{{ total_jobs_scraped }}</p>
+                <p class="text-xs text-gray-500 mt-1">total jobs found</p>
+            </div>
+
+            <div class="kpi-card col-span-1">
+                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Applied</p>
+                <p class="text-3xl font-black text-blue-400">{{ total_applied }}</p>
+                <p class="text-xs text-gray-500 mt-1">applications sent</p>
+            </div>
+
+            <div class="kpi-card col-span-1">
+                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Screening</p>
+                <p class="text-3xl font-black text-yellow-400">{{ screening_count }}</p>
+                <p class="text-xs text-gray-500 mt-1">in screening</p>
+            </div>
+
+            <div class="kpi-card col-span-1">
+                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Interview</p>
+                <p class="text-3xl font-black text-purple-400">{{ interview_count }}</p>
+                <p class="text-xs text-gray-500 mt-1">reached interview</p>
+            </div>
+
+            <div class="kpi-card col-span-1">
+                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Offers</p>
+                <p class="text-3xl font-black text-green-400">{{ offer_count }}</p>
+                <p class="text-xs text-gray-500 mt-1">offers received</p>
+            </div>
+
+            <div class="kpi-card col-span-1">
+                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Response Rate</p>
+                <p class="text-3xl font-black text-indigo-400">{{ response_rate }}%</p>
+                <p class="text-xs text-gray-500 mt-1">got past applied</p>
+            </div>
+
+            <div class="kpi-card col-span-1">
+                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Offer Rate</p>
+                <p class="text-3xl font-black text-emerald-400">{{ offer_rate }}%</p>
+                <p class="text-xs text-gray-500 mt-1">of applied → offer</p>
+            </div>
+
+            <div class="kpi-card col-span-1">
+                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Rejected</p>
+                <p class="text-3xl font-black text-red-400">{{ rejected_count }}</p>
+                <p class="text-xs text-gray-500 mt-1">rejections</p>
+            </div>
+
+        </div>
+
+        <!-- ── Row 2: Pipeline Funnel + Time Metrics ─────────────────────── -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <!-- Funnel -->
+            <div class="chart-card md:col-span-2">
+                <h3 class="text-sm font-bold text-gray-300 mb-4"><i class="fa-solid fa-filter mr-2 text-blue-500"></i>Pipeline Funnel</h3>
+                {% set funnel_max = [total_jobs_scraped, 1] | max %}
+                <div class="space-y-3">
+                    {% set funnel = [
+                        ("Scraped",    total_jobs_scraped, "bg-gray-600",   "text-gray-300"),
+                        ("Approved",   total_approved,     "bg-green-700",  "text-green-300"),
+                        ("Applied",    total_applied,      "bg-blue-700",   "text-blue-300"),
+                        ("Screening",  screening_count,    "bg-yellow-700", "text-yellow-300"),
+                        ("Interview",  interview_count,    "bg-purple-700", "text-purple-300"),
+                        ("Offer",      offer_count,        "bg-emerald-700","text-emerald-300"),
+                        ("Rejected",   rejected_count,     "bg-red-800",    "text-red-300"),
+                    ] %}
+                    {% for label, count, bar_cls, txt_cls in funnel %}
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xs text-gray-500 w-20 text-right flex-shrink-0">{{ label }}</span>
+                        <div class="flex-1 bg-gray-800 rounded-full h-5 overflow-hidden">
+                            {% set pct = (count / funnel_max * 100) | round(1) %}
+                            <div class="funnel-bar {{ bar_cls }} h-5 rounded-full flex items-center px-2" style="width: {{ [pct, 2] | max }}%">
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold {{ txt_cls }} w-8 text-right flex-shrink-0">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Time Metrics -->
+            <div class="chart-card flex flex-col justify-between">
+                <h3 class="text-sm font-bold text-gray-300 mb-4"><i class="fa-solid fa-stopwatch mr-2 text-yellow-500"></i>Avg Time-to-Progress</h3>
+                <div class="space-y-4">
+                    <div class="bg-gray-800 rounded-xl p-4 text-center">
+                        <p class="text-xs text-gray-500 mb-1">Applied → Screening</p>
+                        {% if avg_time_to_screen is not none %}
+                            <p class="text-4xl font-black text-yellow-400">{{ avg_time_to_screen }}</p>
+                            <p class="text-xs text-gray-500">days</p>
+                        {% else %}
+                            <p class="text-xl font-black text-gray-600 mt-2">No data yet</p>
+                        {% endif %}
+                    </div>
+                    <div class="bg-gray-800 rounded-xl p-4 text-center">
+                        <p class="text-xs text-gray-500 mb-1">Applied → Interview</p>
+                        {% if avg_time_to_interview is not none %}
+                            <p class="text-4xl font-black text-purple-400">{{ avg_time_to_interview }}</p>
+                            <p class="text-xs text-gray-500">days</p>
+                        {% else %}
+                            <p class="text-xl font-black text-gray-600 mt-2">No data yet</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── Row 3: Line Chart (30 day) + Source + Employment ─────────── -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <!-- Applications over time -->
+            <div class="chart-card md:col-span-1">
+                <h3 class="text-sm font-bold text-gray-300 mb-4"><i class="fa-solid fa-paper-plane mr-2 text-blue-500"></i>Applications / Day <span class="text-gray-600 text-xs font-normal">(last 30 days)</span></h3>
+                <canvas id="lineChart" height="180"></canvas>
+            </div>
+
+            <!-- Source breakdown -->
+            <div class="chart-card md:col-span-1">
+                <h3 class="text-sm font-bold text-gray-300 mb-4"><i class="fa-solid fa-globe mr-2 text-indigo-500"></i>Jobs by Source</h3>
+                {% if source_labels %}
+                <canvas id="sourceChart" height="180"></canvas>
+                {% else %}
+                <div class="flex items-center justify-center h-40 text-gray-600 text-sm">No data yet</div>
+                {% endif %}
+            </div>
+
+            <!-- Employment type -->
+            <div class="chart-card md:col-span-1">
+                <h3 class="text-sm font-bold text-gray-300 mb-4"><i class="fa-solid fa-briefcase mr-2 text-purple-500"></i>Employment Types</h3>
+                {% if etype_labels %}
+                <canvas id="etypeChart" height="180"></canvas>
+                {% else %}
+                <div class="flex items-center justify-center h-40 text-gray-600 text-sm">No data yet</div>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- ── Row 4: Top Companies + Activity Feed ──────────────────────── -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Top Companies -->
+            <div class="chart-card">
+                <h3 class="text-sm font-bold text-gray-300 mb-4"><i class="fa-solid fa-building mr-2 text-green-500"></i>Top Companies Applied To</h3>
+                {% if top_companies %}
+                <div class="space-y-2">
+                    {% set max_company_count = top_companies[0].count if top_companies else 1 %}
+                    {% for row in top_companies %}
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xs text-gray-400 truncate w-32 flex-shrink-0">{{ row.company }}</span>
+                        <div class="flex-1 bg-gray-800 rounded-full h-4 overflow-hidden">
+                            <div class="bg-green-700 h-4 rounded-full" style="width: {{ (row.count / max_company_count * 100) | round(1) }}%"></div>
+                        </div>
+                        <span class="text-xs font-bold text-green-300 w-5 text-right flex-shrink-0">{{ row.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="flex items-center justify-center h-32 text-gray-600 text-sm">No applications yet</div>
+                {% endif %}
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="chart-card">
+                <h3 class="text-sm font-bold text-gray-300 mb-4"><i class="fa-solid fa-clock-rotate-left mr-2 text-orange-400"></i>Recent Activity</h3>
+                {% if activity_feed %}
+                <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {% for item in activity_feed %}
+                    <div class="flex items-start justify-between bg-gray-800/60 rounded-lg px-3 py-2 hover:bg-gray-800 transition">
+                        <div class="flex-1 min-w-0 mr-3">
+                            <a href="/applications/{{ item.job_id }}/builder" class="text-sm text-gray-200 font-semibold hover:text-blue-400 truncate block">{{ item.title }}</a>
+                            <p class="text-xs text-gray-500 truncate">{{ item.company }}</p>
+                        </div>
+                        <div class="flex flex-col items-end flex-shrink-0 space-y-1">
+                            {% if item.status == "APPLIED" %}
+                                {% if item.sub_status == "OFFER" %}
+                                    <span class="status-badge bg-emerald-900/60 text-emerald-300">Offer</span>
+                                {% elif item.sub_status == "INTERVIEW" %}
+                                    <span class="status-badge bg-purple-900/60 text-purple-300">Interview</span>
+                                {% elif item.sub_status == "SCREENING" %}
+                                    <span class="status-badge bg-yellow-900/60 text-yellow-300">Screening</span>
+                                {% elif item.sub_status == "REJECTED" %}
+                                    <span class="status-badge bg-red-900/60 text-red-300">Rejected</span>
+                                {% else %}
+                                    <span class="status-badge bg-blue-900/60 text-blue-300">Applied</span>
+                                {% endif %}
+                            {% elif item.status == "APPROVED" %}
+                                <span class="status-badge bg-green-900/60 text-green-300">Approved</span>
+                            {% elif item.status == "SKIPPED" %}
+                                <span class="status-badge bg-gray-700 text-gray-400">Skipped</span>
+                            {% else %}
+                                <span class="status-badge bg-gray-700 text-gray-400">{{ item.status }}</span>
+                            {% endif %}
+                            <span class="text-[10px] text-gray-600">{{ item.ts }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="flex items-center justify-center h-32 text-gray-600 text-sm">No activity yet</div>
+                {% endif %}
+            </div>
+
+        </div>
+
+    </div><!-- end page body -->
+
+    <script>
+    // ── Line Chart: Applications per Day ───────────────────────────────────────
+    const lineCtx = document.getElementById('lineChart');
+    if (lineCtx) {
+        new Chart(lineCtx, {
+            type: 'line',
+            data: {
+                labels: {{ day_labels | tojson }},
+                datasets: [{
+                    label: 'Applications',
+                    data: {{ day_counts | tojson }},
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59,130,246,0.1)',
+                    borderWidth: 2,
+                    pointRadius: 2,
+                    tension: 0.4,
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        ticks: { color: '#4B5563', font: { size: 9 }, maxTicksLimit: 6 },
+                        grid: { color: '#1F2937' }
+                    },
+                    y: {
+                        ticks: { color: '#4B5563', font: { size: 10 }, stepSize: 1 },
+                        grid: { color: '#1F2937' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // ── Doughnut: Source Breakdown ─────────────────────────────────────────────
+    const sourceCtx = document.getElementById('sourceChart');
+    if (sourceCtx) {
+        const COLORS = ['#3B82F6','#8B5CF6','#10B981','#F59E0B','#EF4444','#06B6D4','#EC4899','#6366F1'];
+        new Chart(sourceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ source_labels | tojson }},
+                datasets: [{
+                    data: {{ source_counts | tojson }},
+                    backgroundColor: COLORS,
+                    borderWidth: 2,
+                    borderColor: '#111827',
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#9CA3AF', font: { size: 10 }, padding: 8, boxWidth: 12 }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    // ── Bar: Employment Types ──────────────────────────────────────────────────
+    const etypeCtx = document.getElementById('etypeChart');
+    if (etypeCtx) {
+        new Chart(etypeCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ etype_labels | tojson }},
+                datasets: [{
+                    label: 'Jobs',
+                    data: {{ etype_counts | tojson }},
+                    backgroundColor: '#7C3AED',
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        ticks: { color: '#4B5563', font: { size: 9 }, maxRotation: 30 },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: { color: '#4B5563', font: { size: 10 }, stepSize: 1 },
+                        grid: { color: '#1F2937' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    </script>
+
+</body>
+</html>

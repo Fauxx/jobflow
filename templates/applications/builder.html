@@ -119,7 +119,7 @@
                         </button>
                     </div>
                     <textarea id="field-summary" rows="4" placeholder="Click 'Generate AI Suggestions' to get a tailored summary, then edit it here..."
-                        class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition resize-none leading-relaxed">{{ app.cover_letter or '' }}</textarea>
+                        class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition resize-none leading-relaxed"></textarea>
                 </div>
 
                 <!-- SKILLS -->
@@ -130,10 +130,10 @@
                             <i class="fa-solid fa-check mr-1"></i> Approve
                         </button>
                     </div>
-                    <div id="skills-container" class="space-y-2">
-                        <p class="text-xs text-gray-500 italic">AI will populate your skills here, grouped by category...</p>
+                    <div id="skills-container" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <p class="text-xs text-gray-500 italic col-span-full">AI will populate your skills here, grouped by category...</p>
                     </div>
-                    
+                    <button onclick="addSkillRow('')" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Skill</button>
                 </div>
 
                 <!-- EXPERIENCE -->
@@ -161,6 +161,7 @@
                     <div id="projects-container" class="space-y-4">
                         <p class="text-xs text-gray-500 italic">AI will select projects relevant to this job...</p>
                     </div>
+                    <button onclick="addProjectCard({})" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Project</button>
                 </div>
 
                 <!-- CERTIFICATIONS -->
@@ -344,10 +345,10 @@
 
             // Skills
             const sc = document.getElementById('skills-container');
-            sc.innerHTML = `
-                <textarea id="skills-input" rows="3" class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500">${(data.skills || []).join(', ')}{{ app.cover_letter or '' }}</textarea>
-                <p class="text-[10px] text-gray-500 mt-1">Comma-separated list of skills.</p>
-            `;
+            sc.innerHTML = '';
+            (data.skills || []).forEach(skill => {
+                addSkillRow(skill);
+            });
 
             // Experience
             const ec = document.getElementById('experience-container');
@@ -393,12 +394,23 @@
             (exp.bullets || []).forEach(b => {
                 const original = b.original_text || '';
                 const tailored = b.tailored_text || b.original_text || '';
+                const reason = b.reason || '';
+                const id = b.id || '';
+                const badge = b.highly_recommended ? `<span class="bg-indigo-900/50 text-indigo-400 border border-indigo-700/50 text-[9px] font-black px-1.5 py-0.5 rounded ml-2 uppercase tracking-wider shrink-0">Top Match</span>` : '';
+                
                 bulletsHtml += `
-                    <div class="bullet-row">
-                        <textarea rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 resize-none exp-bullet">${tailored}{{ app.cover_letter or '' }}</textarea>
-                        <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 text-xs mt-1"><i class="fa-solid fa-trash"></i></button>
+                    <div class="bullet-row bg-gray-900/40 p-2 rounded-lg border border-gray-800/80 relative group mb-2">
+                        <textarea rows="2" data-bullet-id="${id}" class="w-full bg-transparent border-none text-gray-200 text-xs focus:outline-none resize-none exp-bullet" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">${tailored}</textarea>
+                        
+                        <div class="flex items-start justify-between mt-1 px-1">
+                            <div class="flex items-center flex-1 pr-4">
+                                ${reason ? `<i class="fa-solid fa-sparkles text-yellow-500 text-[10px] mr-1.5 mt-0.5"></i> <span class="text-[10px] text-gray-400 italic leading-tight">${reason}</span>` : ''}
+                                ${badge}
+                            </div>
+                            <button onclick="this.closest('.bullet-row').remove()" class="text-gray-600 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition px-2"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        ${original && original !== tailored ? `<p class="text-[9px] text-red-400 mt-1 pl-1 border-t border-gray-800 pt-1">Modified from original. Please revert if needed.</p>` : ''}
                     </div>
-                    ${original && original !== tailored ? `<p class="original-tooltip ml-1">Original: "${original}"</p>` : ''}
                 `;
             });
 
@@ -417,7 +429,10 @@
                 <div class="exp-bullets-container space-y-1 mt-2">
                     ${bulletsHtml}
                 </div>
-                <button onclick="addBulletToCard(this.parentElement, 'exp')" class="text-xs text-blue-400 hover:text-blue-300 font-bold mt-1"><i class="fa-solid fa-plus mr-1"></i> Add Bullet</button>
+                <div class="flex items-center mt-2">
+                    <button onclick="addBulletToCard(this.parentElement, 'exp')" class="text-xs text-blue-400 hover:text-blue-300 font-bold px-2 py-1 bg-blue-900/20 rounded mr-2"><i class="fa-solid fa-plus mr-1"></i> Blank Bullet</button>
+                    <button onclick="openMasterBulletsModal(this, 'exp')" class="text-xs text-purple-400 hover:text-purple-300 font-bold px-2 py-1 bg-purple-900/20 rounded"><i class="fa-solid fa-magnifying-glass mr-1"></i> Browse Unused Bullets</button>
+                </div>
             `;
             ec.appendChild(card);
         }
@@ -432,12 +447,23 @@
             (proj.bullets || []).forEach(b => {
                 const original = b.original_text || '';
                 const tailored = b.tailored_text || b.original_text || '';
+                const reason = b.reason || '';
+                const id = b.id || '';
+                const badge = b.highly_recommended ? `<span class="bg-indigo-900/50 text-indigo-400 border border-indigo-700/50 text-[9px] font-black px-1.5 py-0.5 rounded ml-2 uppercase tracking-wider shrink-0">Top Match</span>` : '';
+                
                 bulletsHtml += `
-                    <div class="bullet-row">
-                        <textarea rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 resize-none proj-bullet">${tailored}{{ app.cover_letter or '' }}</textarea>
-                        <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 text-xs mt-1"><i class="fa-solid fa-trash"></i></button>
+                    <div class="bullet-row bg-gray-900/40 p-2 rounded-lg border border-gray-800/80 relative group mb-2">
+                        <textarea rows="2" data-bullet-id="${id}" class="w-full bg-transparent border-none text-gray-200 text-xs focus:outline-none resize-none proj-bullet" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">${tailored}</textarea>
+                        
+                        <div class="flex items-start justify-between mt-1 px-1">
+                            <div class="flex items-center flex-1 pr-4">
+                                ${reason ? `<i class="fa-solid fa-sparkles text-yellow-500 text-[10px] mr-1.5 mt-0.5"></i> <span class="text-[10px] text-gray-400 italic leading-tight">${reason}</span>` : ''}
+                                ${badge}
+                            </div>
+                            <button onclick="this.closest('.bullet-row').remove()" class="text-gray-600 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition px-2"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        ${original && original !== tailored ? `<p class="text-[9px] text-red-400 mt-1 pl-1 border-t border-gray-800 pt-1">Modified from original. Please revert if needed.</p>` : ''}
                     </div>
-                    ${original && original !== tailored ? `<p class="original-tooltip ml-1">Original: "${original}"</p>` : ''}
                 `;
             });
 
@@ -453,7 +479,10 @@
                 <div class="proj-bullets-container space-y-1 mt-2">
                     ${bulletsHtml}
                 </div>
-                <button onclick="addBulletToCard(this.parentElement, 'proj')" class="text-xs text-blue-400 hover:text-blue-300 font-bold mt-1"><i class="fa-solid fa-plus mr-1"></i> Add Bullet</button>
+                <div class="flex items-center mt-2">
+                    <button onclick="addBulletToCard(this.parentElement, 'proj')" class="text-xs text-blue-400 hover:text-blue-300 font-bold px-2 py-1 bg-blue-900/20 rounded mr-2"><i class="fa-solid fa-plus mr-1"></i> Blank Bullet</button>
+                    <button onclick="openMasterBulletsModal(this, 'proj')" class="text-xs text-purple-400 hover:text-purple-300 font-bold px-2 py-1 bg-purple-900/20 rounded"><i class="fa-solid fa-magnifying-glass mr-1"></i> Browse Unused Bullets</button>
+                </div>
             `;
             pc.appendChild(card);
         }
@@ -480,6 +509,17 @@
             container.appendChild(card);
         }
 
+        function addSkillRow(skill = '') {
+            const container = document.getElementById('skills-container');
+            const row = document.createElement('div');
+            row.className = 'skill-row flex items-center space-x-2';
+            row.innerHTML = `
+                <input type="text" value="${skill}" placeholder="Skill" class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs skill-item focus:outline-none focus:border-blue-500">
+                <button onclick="this.closest('.skill-row').remove()" class="text-red-400 hover:text-red-300 px-2"><i class="fa-solid fa-trash"></i></button>
+            `;
+            container.appendChild(row);
+        }
+
         function addCertificationCard(cert) {
             const container = document.getElementById('certs-container');
             const card = document.createElement('div');
@@ -496,7 +536,7 @@
             const row = document.createElement('div');
             row.className = 'bullet-row';
             row.innerHTML = `
-                <textarea rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 resize-none ${prefix}-bullet" placeholder="Write your bullet point...">{{ app.cover_letter or '' }}</textarea>
+                <textarea rows="2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 resize-none ${prefix}-bullet" placeholder="Write your bullet point..."></textarea>
                 <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300 text-xs mt-1"><i class="fa-solid fa-trash"></i></button>
             `;
             container.appendChild(row);
@@ -516,14 +556,22 @@
 
         // ─── Gather Resume Data ───
         function gatherResumeData() {
-            const skillsVal = document.getElementById('skills-input') ? document.getElementById('skills-input').value : '';
-            const skills = skillsVal.split(',').map(s => s.trim()).filter(Boolean);
+            const skills = [];
+            document.querySelectorAll('.skill-item').forEach(input => {
+                if (input.value.trim()) skills.push(input.value.trim());
+            });
 
             const experiences = [];
             document.querySelectorAll('.exp-card').forEach(card => {
                 const bullets = [];
                 card.querySelectorAll('.exp-bullet').forEach(ta => {
-                    if (ta.value.trim()) bullets.push({ original_text: ta.value.trim(), tailored_text: ta.value.trim() });
+                    if (ta.value.trim()) {
+                        bullets.push({ 
+                            id: ta.getAttribute('data-bullet-id') || '',
+                            original_text: ta.value.trim(), 
+                            tailored_text: ta.value.trim() 
+                        });
+                    }
                 });
                 experiences.push({
                     company: card.querySelector('.exp-company')?.value || '',
@@ -538,7 +586,13 @@
             document.querySelectorAll('.proj-card').forEach(card => {
                 const bullets = [];
                 card.querySelectorAll('.proj-bullet').forEach(ta => {
-                    if (ta.value.trim()) bullets.push({ original_text: ta.value.trim(), tailored_text: ta.value.trim() });
+                    if (ta.value.trim()) {
+                        bullets.push({ 
+                            id: ta.getAttribute('data-bullet-id') || '',
+                            original_text: ta.value.trim(), 
+                            tailored_text: ta.value.trim() 
+                        });
+                    }
                 });
                 projects.push({
                     name: card.querySelector('.proj-name')?.value || '',
@@ -890,6 +944,108 @@
             } catch(e) {
                 alert("Network error.");
             }
+        }
+    </script>
+    <!-- Master Profile Bullets Modal -->
+    <div id="master-bullets-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col h-[70vh]">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h2 class="text-xl font-black text-white"><i class="fa-solid fa-list-check text-purple-400 mr-2"></i>Unused Master Bullets</h2>
+                <button onclick="closeMasterBulletsModal()" class="text-gray-500 hover:text-white transition bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-xs text-gray-400 mb-4 shrink-0">These bullets exist in your master profile for this role, but were not selected by the AI. Click '+' to add them.</p>
+            <div id="master-bullets-list" class="flex-1 overflow-y-auto space-y-2 pr-2">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const masterProfile = {{ master_profile_json | safe }};
+        let currentBulletTarget = null; // { container: Element, prefix: 'exp' or 'proj' }
+
+        function openMasterBulletsModal(btnElement, type) {
+            currentBulletTarget = {
+                container: btnElement.closest('.exp-card, .proj-card'),
+                prefix: type
+            };
+            
+            const titleInput = currentBulletTarget.container.querySelector('.exp-title, .proj-name');
+            const companyInput = currentBulletTarget.container.querySelector('.exp-company');
+            
+            const title = titleInput ? titleInput.value.toLowerCase().trim() : '';
+            const company = companyInput ? companyInput.value.toLowerCase().trim() : '';
+
+            let matchingBullets = [];
+            if (type === 'exp') {
+                const match = (masterProfile.experiences || []).find(e => 
+                    (e.title && e.title.toLowerCase().trim() === title) || 
+                    (e.company && e.company.toLowerCase().trim() === company)
+                );
+                if (match) matchingBullets = match.bullets || [];
+            } else {
+                const match = (masterProfile.projects || []).find(p => 
+                    (p.name && p.name.toLowerCase().trim() === title) || 
+                    (p.role && p.role.toLowerCase().trim() === title)
+                );
+                if (match) matchingBullets = match.bullets || [];
+            }
+
+            const activeIds = Array.from(currentBulletTarget.container.querySelectorAll(`textarea[data-bullet-id]`))
+                                   .map(ta => ta.getAttribute('data-bullet-id'))
+                                   .filter(Boolean);
+
+            const listContainer = document.getElementById('master-bullets-list');
+            listContainer.innerHTML = '';
+
+            const available = matchingBullets.filter(b => !activeIds.includes(b.id));
+
+            if (available.length === 0) {
+                listContainer.innerHTML = `<div class="text-center text-gray-500 py-10"><i class="fa-solid fa-ghost text-4xl mb-3 opacity-20"></i><p class="text-sm font-semibold">No unused bullets available.</p><p class="text-xs mt-1 text-gray-600">Either all master bullets are already added, or no matching master role was found.</p></div>`;
+            } else {
+                available.forEach(b => {
+                    // Make sure we escape quotes for JS template literals
+                    const safeText = b.text.replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    listContainer.innerHTML += `
+                        <div class="bg-gray-800 border border-gray-700 p-3 rounded-lg flex items-start space-x-3 group hover:border-gray-600 transition">
+                            <div class="flex-1">
+                                <p class="text-[13px] text-gray-300 font-mono leading-relaxed">${b.text}</p>
+                            </div>
+                            <button onclick="appendMasterBullet('${b.id}', \`${safeText}\`)" class="bg-purple-600/20 text-purple-400 hover:bg-purple-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center shrink-0"><i class="fa-solid fa-plus mr-1"></i> Add</button>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('master-bullets-modal').classList.remove('hidden');
+        }
+
+        function closeMasterBulletsModal() {
+            document.getElementById('master-bullets-modal').classList.add('hidden');
+        }
+
+        function appendMasterBullet(id, text) {
+            const container = currentBulletTarget.container.querySelector(`.${currentBulletTarget.prefix}-bullets-container`);
+            const div = document.createElement('div');
+            div.className = 'bullet-row bg-gray-900/40 p-2 rounded-lg border border-gray-800/80 relative group mb-2';
+            // Un-escape quotes for the textarea
+            const displayText = text.replace(/&quot;/g, '"');
+            div.innerHTML = `
+                <textarea rows="2" data-bullet-id="${id}" class="w-full bg-transparent border-none text-gray-200 text-xs focus:outline-none resize-none ${currentBulletTarget.prefix}-bullet" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">${displayText}</textarea>
+                <div class="flex items-start justify-between mt-1 px-1">
+                    <div class="flex items-center flex-1 pr-4">
+                        <i class="fa-solid fa-user-plus text-purple-500 text-[10px] mr-1.5 mt-0.5"></i> <span class="text-[10px] text-gray-400 italic leading-tight">Manually added from Master Profile</span>
+                    </div>
+                    <button onclick="this.closest('.bullet-row').remove()" class="text-gray-600 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition px-2"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            container.appendChild(div);
+            
+            closeMasterBulletsModal();
+            setTimeout(() => {
+                const titleInput = currentBulletTarget.container.querySelector('.exp-title, .proj-name');
+                openMasterBulletsModal(titleInput, currentBulletTarget.prefix);
+            }, 50);
         }
     </script>
 </body>

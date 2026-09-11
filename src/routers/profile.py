@@ -29,9 +29,15 @@ async def view_profile(request: Request, db: Session = Depends(get_db), current_
 async def update_profile(request: Request, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     try:
         profile_data = await request.json()
+        import logging
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+        logger.info(f"[PROFILE SAVE] skills={len(profile_data.get('skills',[]))}, exps={len(profile_data.get('experiences',[]))}, projs={len(profile_data.get('projects',[]))}, edu={len(profile_data.get('education',[]))}")
         save_full_profile(db, current_user.id, profile_data)
         return {"status": "success"}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/import")

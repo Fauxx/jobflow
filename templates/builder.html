@@ -55,11 +55,11 @@
     </header>
 
     <!-- Main Split Screen -->
-    <main class="flex-1 flex overflow-hidden">
+    <main class="flex-1 flex overflow-hidden w-full h-full">
         
-        <!-- LEFT PANEL: Job Description (w-1/3) -->
-        <section class="w-1/3 bg-gray-850 border-r border-gray-700 flex flex-col h-full overflow-hidden">
-            <div class="p-4 bg-gray-800 border-b border-gray-700 shrink-0">
+        <!-- LEFT PANEL: Job Description -->
+        <section id="jd-panel" style="width: 33.333%;" class="bg-gray-850 flex flex-col h-full overflow-hidden shrink-0">
+            <div class="p-4 bg-gray-800 border-b border-gray-700 shrink-0 flex justify-between items-center">
                 <h2 class="font-bold text-gray-200 flex items-center space-x-2 text-sm">
                     <i class="fa-solid fa-briefcase text-blue-400"></i>
                     <span>Job Description</span>
@@ -70,13 +70,20 @@
             </div>
         </section>
 
-        <!-- RIGHT PANEL: Interactive Builder (w-2/3) -->
-        <section class="w-2/3 bg-gray-900 flex flex-col h-full overflow-hidden relative border-r border-gray-700">
+        <!-- RESIZER -->
+        <div id="resizer" class="w-1.5 bg-gray-700 hover:bg-purple-500 cursor-col-resize transition-colors z-10 flex flex-col items-center justify-center shrink-0" title="Drag to resize">
+            <div class="w-0.5 h-10 bg-gray-400 rounded-full opacity-50"></div>
+        </div>
+
+        <!-- RIGHT PANEL: Interactive Builder -->
+        <section id="builder-panel" class="flex-1 bg-gray-900 flex flex-col h-full overflow-hidden relative min-w-0">
             <div class="p-4 bg-gray-800 border-b border-gray-700 shrink-0 flex justify-between items-center">
-                <h2 class="font-bold text-gray-200 flex items-center space-x-2 text-sm">
-                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
-                    <span>Tailored Suggestions</span>
-                </h2>
+                <div class="flex items-center space-x-3">
+                    <h2 class="font-bold text-gray-200 flex items-center space-x-2 text-sm">
+                        <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
+                        <span>Tailored Suggestions</span>
+                    </h2>
+                </div>
                 <span class="text-xs font-semibold px-2 py-1 bg-purple-900/50 text-purple-300 rounded-md border border-purple-700/50">
                     Auto-saves on edit
                 </span>
@@ -101,14 +108,63 @@
                     </button>
                 </div>
                 <!-- Summary -->
-                <div class="space-y-2">
-                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider">Professional Summary</h3>
+                <div class="space-y-2 relative group z-20">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider">Professional Summary</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="toggleSummaryAI()" class="text-xs text-purple-400 hover:text-purple-300 font-bold transition flex items-center bg-purple-900/20 px-2 py-1 rounded">
+                                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Adjust with AI
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Dropdown -->
+                    <div id="summary-ai-box" class="hidden absolute top-8 right-0 w-80 bg-gray-900 border border-purple-500/50 p-4 rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.2)] z-30">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Ask AI to rewrite summary</p>
+                        <div class="flex space-x-2">
+                            <input type="text" id="summary-ai-instruction" onkeypress="if(event.key === 'Enter') adjustSummaryWithAI()" placeholder="e.g. Make it more aggressive" class="flex-1 bg-gray-800 border border-gray-700 text-xs text-white px-3 py-2 rounded-lg focus:outline-none focus:border-purple-500">
+                            <button id="btn-adjust-summary" onclick="adjustSummaryWithAI()" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg transition flex items-center justify-center shrink-0 shadow-lg shadow-purple-900/50">
+                                <i class="fa-solid fa-arrow-right text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="flex space-x-2 mt-3">
+                            <button onclick="document.getElementById('summary-ai-instruction').value='Make it shorter and punchier'; adjustSummaryWithAI()" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2.5 py-1.5 rounded-lg hover:bg-gray-700 transition">Shorter</button>
+                            <button onclick="document.getElementById('summary-ai-instruction').value='Focus more on leadership'; adjustSummaryWithAI()" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2.5 py-1.5 rounded-lg hover:bg-gray-700 transition">Leadership</button>
+                            <button onclick="document.getElementById('summary-ai-instruction').value='Make it highly technical'; adjustSummaryWithAI()" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2.5 py-1.5 rounded-lg hover:bg-gray-700 transition">Technical</button>
+                        </div>
+                    </div>
+
                     <textarea id="summary-input" rows="4" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-blue-500 focus:outline-none">{{ tailored_resume.summary }}</textarea>
                 </div>
 
                 <!-- Skills -->
-                <div class="space-y-2">
-                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider">Targeted Skills</h3>
+                <!-- Skills -->
+                <div class="space-y-2 relative group z-10">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider">Targeted Skills</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="toggleSkillsAI()" class="text-xs text-purple-400 hover:text-purple-300 font-bold transition flex items-center bg-purple-900/20 px-2 py-1 rounded">
+                                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Adjust with AI
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Dropdown -->
+                    <div id="skills-ai-box" class="hidden absolute top-8 right-0 w-80 bg-gray-900 border border-purple-500/50 p-4 rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.2)] z-30">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Ask AI to modify skills</p>
+                        <div class="flex space-x-2">
+                            <input type="text" id="skills-ai-instruction" onkeypress="if(event.key === 'Enter') adjustSkillsWithAI()" placeholder="e.g. Extract only tech tools" class="flex-1 bg-gray-800 border border-gray-700 text-xs text-white px-3 py-2 rounded-lg focus:outline-none focus:border-purple-500">
+                            <button id="btn-adjust-skills" onclick="adjustSkillsWithAI()" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg transition flex items-center justify-center shrink-0 shadow-lg shadow-purple-900/50">
+                                <i class="fa-solid fa-arrow-right text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="flex space-x-2 mt-3">
+                            <button onclick="document.getElementById('skills-ai-instruction').value='Match perfectly to JD'; adjustSkillsWithAI()" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2.5 py-1.5 rounded-lg hover:bg-gray-700 transition">Match JD</button>
+                            <button onclick="document.getElementById('skills-ai-instruction').value='Remove soft skills'; adjustSkillsWithAI()" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2.5 py-1.5 rounded-lg hover:bg-gray-700 transition">Hard Skills Only</button>
+                            <button onclick="document.getElementById('skills-ai-instruction').value='Add top leadership traits'; adjustSkillsWithAI()" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2.5 py-1.5 rounded-lg hover:bg-gray-700 transition">Leadership</button>
+                        </div>
+                    </div>
+
                     <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 flex flex-wrap gap-2" id="skills-container">
                         {% for skill in tailored_resume.skills %}
                             <span class="skill-badge px-3 py-1 bg-blue-900/40 text-blue-300 rounded-full text-sm border border-blue-700/50 font-medium flex items-center" data-skill="{{ skill }}">
@@ -117,13 +173,18 @@
                             </span>
                         {% endfor %}
                     </div>
+                    <div class="flex items-center space-x-2 mt-2">
+                        <input type="text" id="new-skill-input" placeholder="Type a skill..." class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1 text-sm text-gray-200 focus:outline-none focus:border-blue-500">
+                        <button type="button" onclick="addSkillBadge()" class="text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i>Add</button>
+                    </div>
                 </div>
 
                 <!-- Experience -->
-                <div class="space-y-4">
+                <div class="space-y-4" id="experience-section-container">
                     <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider">Experience</h3>
                     {% for exp in tailored_resume.experiences %}
-                    <div class="experience-block bg-gray-800 rounded-lg border border-gray-700 p-5 space-y-4 shadow-sm">
+                    <div class="experience-block bg-gray-800 rounded-lg border border-gray-700 p-5 space-y-4 shadow-sm relative">
+                        <button type="button" onclick="this.closest('.experience-block').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
                         <div class="flex justify-between items-start border-b border-gray-700 pb-3">
                             <div class="w-full">
                                 <input type="text" value="{{ exp.title }}" class="exp-title w-full font-bold text-lg bg-transparent border-none text-white focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1">
@@ -138,29 +199,39 @@
                         <div class="space-y-3">
                             <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Suggested Bullets (Check to include)</p>
                             {% for bullet in exp.bullets %}
-                            <div class="bullet-row flex items-start space-x-3 group {% if bullet.highly_recommended %}bg-purple-900/10 border border-purple-500/30 p-2 rounded-lg{% else %}p-2 border border-transparent{% endif %} transition">
+                            <div class="bullet-row flex items-start space-x-3 group {% if bullet.highly_recommended %}bg-purple-900/10 border border-purple-500/30 p-2 rounded-lg{% else %}p-2 border border-transparent{% endif %} transition relative">
                                 <input type="checkbox" onchange="debounceSave()" {% if bullet.highly_recommended %}checked{% endif %} class="bullet-checkbox mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer">
                                 <div class="flex-1">
-                                    <textarea rows="2" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none">{{ bullet.tailored_text }}</textarea>
-                                    {% if bullet.highly_recommended %}
-                                    <p class="text-xs text-purple-400 mt-1 flex items-center space-x-1">
-                                        <i class="fa-solid fa-star"></i>
-                                        <span>Highly Recommended: {{ bullet.reason }}</span>
+                                    <textarea rows="2" data-id="{{ bullet.id }}" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none">{{ bullet.tailored_text }}</textarea>
+                                    <button type="button" onclick="this.closest('.bullet-row').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                                    {% if bullet.reason %}
+                                    <p class="text-xs mt-1 flex items-center space-x-1 {% if bullet.highly_recommended %}text-purple-400{% else %}text-gray-500 italic{% endif %}">
+                                        <i class="fa-solid {% if bullet.highly_recommended %}fa-star{% else %}fa-sparkles{% endif %}"></i>
+                                        <span>{% if bullet.highly_recommended %}Top Match: {% endif %}{{ bullet.reason }}</span>
                                     </p>
                                     {% endif %}
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
+                        <div class="flex items-center space-x-4 mt-3">
+                            <button type="button" onclick="addBullet(this.parentElement.previousElementSibling)" class="text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Blank Bullet</button>
+                            <button type="button" onclick="openMasterProfileModal('experience', this.closest('.experience-block').querySelector('.exp-company').value, this.parentElement.previousElementSibling)" class="text-xs text-purple-400 hover:text-purple-300 font-bold"><i class="fa-solid fa-magnifying-glass mr-1"></i> Browse Original Bullets</button>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
+                <div class="flex items-center space-x-4 mt-2">
+                    <button type="button" onclick="addExperience()" class="text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Blank Experience</button>
+                    <button type="button" onclick="openMasterItemsModal('experience')" class="text-xs text-purple-400 hover:text-purple-300 font-bold"><i class="fa-solid fa-magnifying-glass mr-1"></i> Import from Master Profile</button>
+                </div>
                 
                 <!-- Projects -->
-                <div class="space-y-4">
+                <div class="space-y-4 mt-8" id="projects-section-container">
                     <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider">Projects</h3>
                     {% for proj in tailored_resume.projects %}
-                    <div class="project-block bg-gray-800 rounded-lg border border-gray-700 p-5 space-y-4 shadow-sm">
+                    <div class="project-block bg-gray-800 rounded-lg border border-gray-700 p-5 space-y-4 shadow-sm relative">
+                        <button type="button" onclick="this.closest('.project-block').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
                         <div class="flex justify-between items-start border-b border-gray-700 pb-3">
                             <div class="w-full">
                                 <input type="text" value="{{ proj.name }}" class="proj-name w-full font-bold text-lg bg-transparent border-none text-white focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1">
@@ -176,28 +247,36 @@
                         <div class="space-y-3">
                             <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Suggested Bullets (Check to include)</p>
                             {% for bullet in proj.bullets %}
-                            <div class="bullet-row flex items-start space-x-3 group {% if bullet.highly_recommended %}bg-purple-900/10 border border-purple-500/30 p-2 rounded-lg{% else %}p-2 border border-transparent{% endif %} transition">
+                            <div class="bullet-row flex items-start space-x-3 group {% if bullet.highly_recommended %}bg-purple-900/10 border border-purple-500/30 p-2 rounded-lg{% else %}p-2 border border-transparent{% endif %} transition relative">
                                 <input type="checkbox" onchange="debounceSave()" {% if bullet.highly_recommended %}checked{% endif %} class="bullet-checkbox mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer">
                                 <div class="flex-1">
-                                    <textarea rows="2" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none">{{ bullet.tailored_text }}</textarea>
+                                    <textarea rows="2" data-id="{{ bullet.id }}" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none">{{ bullet.tailored_text }}</textarea>
+                                    <button type="button" onclick="this.closest('.bullet-row').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                                    {% if bullet.reason %}
+                                    <p class="text-xs mt-1 flex items-center space-x-1 {% if bullet.highly_recommended %}text-purple-400{% else %}text-gray-500 italic{% endif %}">
+                                        <i class="fa-solid {% if bullet.highly_recommended %}fa-star{% else %}fa-sparkles{% endif %}"></i>
+                                        <span>{% if bullet.highly_recommended %}Top Match: {% endif %}{{ bullet.reason }}</span>
+                                    </p>
+                                    {% endif %}
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
+                        <div class="flex items-center space-x-4 mt-3">
+                            <button type="button" onclick="addBullet(this.parentElement.previousElementSibling)" class="text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Blank Bullet</button>
+                            <button type="button" onclick="openMasterProfileModal('project', this.closest('.project-block').querySelector('.proj-name').value, this.parentElement.previousElementSibling)" class="text-xs text-purple-400 hover:text-purple-300 font-bold"><i class="fa-solid fa-magnifying-glass mr-1"></i> Browse Original Bullets</button>
+                        </div>
                     </div>
                     {% endfor %}
+                </div>
+                <div class="flex items-center space-x-4 mt-2">
+                    <button type="button" onclick="addProject()" class="text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Blank Project</button>
+                    <button type="button" onclick="openMasterItemsModal('project')" class="text-xs text-purple-400 hover:text-purple-300 font-bold"><i class="fa-solid fa-magnifying-glass mr-1"></i> Import from Master Profile</button>
                 </div>
                 {% endif %}
             </div>
             
-            <div class="absolute bottom-0 left-0 right-0 p-4 bg-gray-900/95 border-t border-gray-800 backdrop-blur">
-                <div class="relative max-w-4xl mx-auto flex items-center">
-                    <input type="text" id="ai-instruction" onkeypress="if(event.key === 'Enter') submitAiAdjustment()" placeholder="Ask AI to adjust the layout, shorten the summary, or add a section..." class="w-full bg-gray-800 border border-gray-700 rounded-full py-3 pl-5 pr-12 text-sm text-white focus:outline-none focus:border-purple-500 shadow-lg">
-                    <button id="ai-adjust-btn" onclick="submitAiAdjustment()" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-purple-600 hover:bg-purple-500 rounded-full text-white transition flex items-center justify-center w-8 h-8">
-                        <i class="fa-solid fa-arrow-up text-xs"></i>
-                    </button>
-                </div>
-            </div>
+
         </section>
     </main>
 
@@ -216,13 +295,335 @@
         </div>
     </div>
 
+    <!-- Master Profile Bullets Modal -->
+    <div id="master-profile-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-850">
+                <h3 id="master-modal-title" class="text-lg font-bold text-gray-200 flex items-center"><i class="fa-solid fa-book text-purple-400 mr-2"></i> Browse Master Profile</h3>
+                <button onclick="closeMasterProfileModal()" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 space-y-3" id="master-bullets-container">
+                <!-- Bullets injected here -->
+            </div>
+            <div class="p-4 border-t border-gray-800 bg-gray-850 text-right">
+                <button onclick="closeMasterProfileModal()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition">Done</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const masterProfile = {{ master_profile | tojson | safe }};
+
         // Render Markdown JD on load
         document.addEventListener("DOMContentLoaded", () => {
             const jdContentDiv = document.getElementById("jd-content");
             const rawMarkdown = `{{ job.description|safe }}`;
             jdContentDiv.innerHTML = marked.parse(rawMarkdown);
         });
+
+        let currentBulletTargetContainer = null;
+
+        function openMasterProfileModal(type, name, targetContainer) {
+            currentBulletTargetContainer = targetContainer;
+            const container = document.getElementById('master-bullets-container');
+            container.innerHTML = '';
+            
+            document.getElementById('master-modal-title').innerHTML = `<i class="fa-solid fa-book text-purple-400 mr-2"></i> Browse Master Bullets for "${name}"`;
+
+            let matchedItem = null;
+            if (type === 'experience' && masterProfile.experience) {
+                matchedItem = masterProfile.experience.find(e => e.company.toLowerCase() === (name || '').toLowerCase());
+            } else if (type === 'project' && masterProfile.projects) {
+                matchedItem = masterProfile.projects.find(p => p.title.toLowerCase() === (name || '').toLowerCase());
+            }
+
+            if (!matchedItem || !matchedItem.bullets || matchedItem.bullets.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 italic">No bullets found in Master Profile for "${name || 'this item'}". Make sure the name matches your master profile exactly.</p>`;
+            } else {
+                // Get currently added bullet IDs
+                const currentIDs = Array.from(targetContainer.querySelectorAll('.bullet-text')).map(ta => ta.getAttribute('data-id')).filter(id => id);
+                
+                matchedItem.bullets.forEach(bulletObj => {
+                    const bulletText = typeof bulletObj === 'string' ? bulletObj : bulletObj.text;
+                    const bulletId = typeof bulletObj === 'string' ? '' : bulletObj.id;
+                    const isAdded = currentIDs.includes(bulletId);
+                    
+                    const div = document.createElement('div');
+                    div.className = `p-3 rounded-lg border flex justify-between items-start space-x-4 ${isAdded ? 'bg-gray-800 border-gray-700 opacity-50' : 'bg-gray-850 border-gray-600 hover:border-purple-500 cursor-pointer transition'}`;
+                    
+                    div.innerHTML = `
+                        <p class="text-sm text-gray-300 flex-1 leading-relaxed">${bulletText}</p>
+                        ${isAdded ? 
+                            `<span class="text-xs text-green-400 font-bold flex-shrink-0 mt-1"><i class="fa-solid fa-check mr-1"></i>Added</span>` : 
+                            `<button onclick="addBulletFromMaster(this, \`${bulletId}\`, \`${bulletText.replace(/`/g, '\\`')}\`)" class="bg-purple-600 hover:bg-purple-500 text-white text-xs px-3 py-1 rounded font-bold flex-shrink-0 transition"><i class="fa-solid fa-plus mr-1"></i> Add</button>`
+                        }
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            document.getElementById('master-profile-modal').classList.remove('hidden');
+        }
+
+        function openMasterItemsModal(type) {
+            const container = document.getElementById('master-bullets-container');
+            container.innerHTML = '';
+            
+            const titlePrefix = type === 'experience' ? 'Experiences' : 'Projects';
+            document.getElementById('master-modal-title').innerHTML = `<i class="fa-solid fa-book text-purple-400 mr-2"></i> Import ${titlePrefix} from Master Profile`;
+
+            let items = [];
+            let currentNames = [];
+            if (type === 'experience') {
+                items = masterProfile.experience || [];
+                currentNames = Array.from(document.querySelectorAll('.exp-company')).map(i => i.value.trim().toLowerCase());
+            } else if (type === 'project') {
+                items = masterProfile.projects || [];
+                currentNames = Array.from(document.querySelectorAll('.proj-name')).map(i => i.value.trim().toLowerCase());
+            }
+
+            if (items.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 italic">No ${titlePrefix.toLowerCase()} found in your Master Profile.</p>`;
+            } else {
+                items.forEach((item, index) => {
+                    const itemName = type === 'experience' ? item.company : item.title;
+                    const itemSubtitle = type === 'experience' 
+                        ? `${item.role || ''} • ${item.date || ''}` 
+                        : `${item.role || ''} • ${item.date || ''} • ${item.tech_stack || ''}`;
+                    const isAdded = currentNames.includes((itemName || '').toLowerCase());
+                    
+                    const div = document.createElement('div');
+                    div.className = `p-4 rounded-lg border flex justify-between items-start space-x-4 ${isAdded ? 'bg-gray-800 border-gray-700 opacity-50' : 'bg-gray-850 border-gray-600 hover:border-purple-500 cursor-pointer transition'}`;
+                    
+                    // We need to pass the full item object to the add function. We'll store it globally in an array or attach to window.
+                    window[`__master_item_${type}_${index}`] = item;
+
+                    div.innerHTML = `
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-200">${itemName}</h4>
+                            <p class="text-xs text-gray-400 mt-1 line-clamp-2">${itemSubtitle || 'No details available'}</p>
+                            <p class="text-xs text-blue-400 mt-2">${item.bullets ? item.bullets.length : 0} bullets available</p>
+                        </div>
+                        ${isAdded ? 
+                            `<span class="text-xs text-green-400 font-bold flex-shrink-0 mt-1"><i class="fa-solid fa-check mr-1"></i>In Resume</span>` : 
+                            `<button onclick="addBlockFromMaster('${type}', ${index}); closeMasterProfileModal();" class="bg-purple-600 hover:bg-purple-500 text-white text-sm px-4 py-2 rounded font-bold flex-shrink-0 transition shadow-lg"><i class="fa-solid fa-file-import mr-1"></i> Import Block</button>`
+                        }
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            document.getElementById('master-profile-modal').classList.remove('hidden');
+        }
+
+        function addBlockFromMaster(type, index) {
+            const data = window[`__master_item_${type}_${index}`];
+            if (type === 'experience') {
+                addExperience(data);
+            } else {
+                addProject(data);
+            }
+        }
+
+        function closeMasterProfileModal() {
+            document.getElementById('master-profile-modal').classList.add('hidden');
+        }
+
+        function addBulletFromMaster(btn, id, text) {
+            if (!currentBulletTargetContainer) return;
+            
+            const bulletRow = document.createElement('div');
+            bulletRow.className = 'bullet-row flex items-start space-x-3 group p-2 border border-transparent transition relative';
+            bulletRow.innerHTML = `
+                <input type="checkbox" onchange="debounceSave()" checked class="bullet-checkbox mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer">
+                <div class="flex-1">
+                    <textarea rows="2" data-id="${id}" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none">${text}</textarea>
+                    <button type="button" onclick="this.closest('.bullet-row').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                    <p class="text-xs text-purple-400 mt-1 flex items-center space-x-1">
+                        <i class="fa-solid fa-book"></i>
+                        <span>Imported from Master Profile</span>
+                    </p>
+                </div>
+            `;
+            currentBulletTargetContainer.appendChild(bulletRow);
+            debounceSave();
+            
+            // Update button visually
+            btn.parentElement.classList.add('opacity-50', 'bg-gray-800', 'border-gray-700');
+            btn.parentElement.classList.remove('bg-gray-850', 'hover:border-purple-500', 'cursor-pointer');
+            btn.outerHTML = `<span class="text-xs text-green-400 font-bold flex-shrink-0 mt-1"><i class="fa-solid fa-check mr-1"></i>Added</span>`;
+        }
+
+        function toggleJD() {
+            const jdPanel = document.getElementById('jd-panel');
+            const resizer = document.getElementById('resizer');
+            const navText = document.getElementById('nav-toggle-text');
+            
+            if (jdPanel.style.display === 'none') {
+                // Show JD
+                jdPanel.style.display = 'flex';
+                resizer.style.display = 'flex';
+                navText.innerText = "Hide JD";
+            } else {
+                // Hide JD
+                jdPanel.style.display = 'none';
+                resizer.style.display = 'none';
+                navText.innerText = "Show JD";
+            }
+        }
+
+        // --- Drag Resizer Logic ---
+        const resizer = document.getElementById('resizer');
+        const jdPanel = document.getElementById('jd-panel');
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+            jdPanel.style.userSelect = 'none';
+            document.getElementById('builder-panel').style.userSelect = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const newWidth = (e.clientX / window.innerWidth) * 100;
+            if (newWidth > 15 && newWidth < 85) {
+                jdPanel.style.width = `${newWidth}%`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+                jdPanel.style.userSelect = '';
+                document.getElementById('builder-panel').style.userSelect = '';
+            }
+        });
+
+        function addSkillBadge() {
+            const input = document.getElementById('new-skill-input');
+            const skill = input.value.trim();
+            if (!skill) return;
+            const container = document.getElementById('skills-container');
+            const badge = document.createElement('span');
+            badge.className = 'skill-badge px-3 py-1 bg-blue-900/40 text-blue-300 rounded-full text-sm border border-blue-700/50 font-medium flex items-center';
+            badge.setAttribute('data-skill', skill);
+            badge.innerHTML = `
+                ${skill}
+                <button type="button" onclick="this.parentElement.remove(); debounceSave();" class="ml-2 hover:text-red-400 transition"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            container.appendChild(badge);
+            input.value = '';
+            debounceSave();
+        }
+
+        function addBullet(container) {
+            const bulletRow = document.createElement('div');
+            bulletRow.className = 'bullet-row flex items-start space-x-3 group p-2 border border-transparent transition relative';
+            const uuid = crypto.randomUUID ? crypto.randomUUID() : 'b-' + Math.random().toString(36).substr(2, 9);
+            bulletRow.innerHTML = `
+                <input type="checkbox" onchange="debounceSave()" checked class="bullet-checkbox mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer">
+                <div class="flex-1">
+                    <textarea rows="2" data-id="${uuid}" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none" placeholder="New bullet..."></textarea>
+                    <button type="button" onclick="this.closest('.bullet-row').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            container.appendChild(bulletRow);
+        }
+
+        function addExperience(data = null) {
+            const container = document.getElementById('experience-section-container');
+            const expBlock = document.createElement('div');
+            expBlock.className = 'experience-block bg-gray-800 rounded-lg border border-gray-700 p-5 space-y-4 shadow-sm relative';
+            
+            let bulletsHtml = '';
+            if (data && data.bullets) {
+                data.bullets.forEach(bObj => {
+                    const bText = typeof bObj === 'string' ? bObj : bObj.text;
+                    const bId = typeof bObj === 'string' ? (crypto.randomUUID ? crypto.randomUUID() : 'b-' + Math.random().toString(36).substr(2, 9)) : bObj.id;
+                    bulletsHtml += `
+                    <div class="bullet-row flex items-start space-x-3 group p-2 border border-transparent transition relative">
+                        <input type="checkbox" onchange="debounceSave()" checked class="bullet-checkbox mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer">
+                        <div class="flex-1">
+                            <textarea rows="2" data-id="${bId}" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none">${bText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                            <button type="button" onclick="this.closest('.bullet-row').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            expBlock.innerHTML = `
+                <button type="button" onclick="this.closest('.experience-block').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                <div class="flex justify-between items-start border-b border-gray-700 pb-3">
+                    <div class="w-full">
+                        <input type="text" value="${data && data.title ? data.title.replace(/"/g, '&quot;') : ''}" placeholder="Job Title" class="exp-title w-full font-bold text-lg bg-transparent border-none text-white focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1">
+                        <div class="text-sm text-gray-400 mt-1 flex space-x-1 w-full">
+                            <input type="text" value="${data && data.company ? data.company.replace(/"/g, '&quot;') : ''}" placeholder="Company" class="exp-company bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1 w-1/2"> 
+                            <span>•</span>
+                            <input type="text" value="${data && data.date_range ? data.date_range.replace(/"/g, '&quot;') : ''}" placeholder="Date Range" class="exp-date bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-1/3">
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Suggested Bullets (Check to include)</p>
+                    ${bulletsHtml}
+                </div>
+                <div class="flex items-center space-x-4 mt-3">
+                    <button type="button" onclick="addBullet(this.parentElement.previousElementSibling)" class="text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Blank Bullet</button>
+                    <button type="button" onclick="openMasterProfileModal('experience', this.closest('.experience-block').querySelector('.exp-company').value, this.parentElement.previousElementSibling)" class="text-xs text-purple-400 hover:text-purple-300 font-bold"><i class="fa-solid fa-magnifying-glass mr-1"></i> Browse Original Bullets</button>
+                </div>
+            `;
+            container.appendChild(expBlock);
+            debounceSave();
+        }
+
+        function addProject(data = null) {
+            const container = document.getElementById('projects-section-container');
+            const projBlock = document.createElement('div');
+            projBlock.className = 'project-block bg-gray-800 rounded-lg border border-gray-700 p-5 space-y-4 shadow-sm relative';
+            
+            let bulletsHtml = '';
+            if (data && data.bullets) {
+                data.bullets.forEach(bObj => {
+                    const bText = typeof bObj === 'string' ? bObj : bObj.text;
+                    const bId = typeof bObj === 'string' ? (crypto.randomUUID ? crypto.randomUUID() : 'b-' + Math.random().toString(36).substr(2, 9)) : bObj.id;
+                    bulletsHtml += `
+                    <div class="bullet-row flex items-start space-x-3 group p-2 border border-transparent transition relative">
+                        <input type="checkbox" onchange="debounceSave()" checked class="bullet-checkbox mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer">
+                        <div class="flex-1">
+                            <textarea rows="2" data-id="${bId}" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none">${bText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                            <button type="button" onclick="this.closest('.bullet-row').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            projBlock.innerHTML = `
+                <button type="button" onclick="this.closest('.project-block').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                <div class="flex justify-between items-start border-b border-gray-700 pb-3">
+                    <div class="w-full">
+                        <input type="text" value="${data && data.title ? data.title.replace(/"/g, '&quot;') : ''}" placeholder="Project Name" class="proj-name w-full font-bold text-lg bg-transparent border-none text-white focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1">
+                        <div class="text-sm text-gray-400 mt-1 flex space-x-1 w-full">
+                            <input type="text" value="${data && data.role ? data.role.replace(/"/g, '&quot;') : ''}" placeholder="Role" class="proj-role bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1 w-1/3"> 
+                            <span>•</span>
+                            <input type="text" value="${data && data.date_range ? data.date_range.replace(/"/g, '&quot;') : ''}" placeholder="Date Range" class="proj-date bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 w-1/4">
+                        </div>
+                        <input type="text" value="${data && data.tech_stack ? data.tech_stack.replace(/"/g, '&quot;') : ''}" placeholder="Tech Stack" class="proj-tech w-full text-sm text-blue-400 bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 -ml-1 mt-1">
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Suggested Bullets (Check to include)</p>
+                    ${bulletsHtml}
+                </div>
+                <div class="flex items-center space-x-4 mt-3">
+                    <button type="button" onclick="addBullet(this.parentElement.previousElementSibling)" class="text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Blank Bullet</button>
+                    <button type="button" onclick="openMasterProfileModal('project', this.closest('.project-block').querySelector('.proj-name').value, this.parentElement.previousElementSibling)" class="text-xs text-purple-400 hover:text-purple-300 font-bold"><i class="fa-solid fa-magnifying-glass mr-1"></i> Browse Original Bullets</button>
+                </div>
+            `;
+            container.appendChild(projBlock);
+            debounceSave();
+        }
 
         async function regenerateResume(jobId) {
             const btn = document.getElementById('regen-btn');
@@ -272,8 +673,10 @@
                 expBlock.querySelectorAll('.bullet-row').forEach(bulletRow => {
                     const isChecked = bulletRow.querySelector('.bullet-checkbox').checked;
                     if (isChecked) {
+                        const textArea = bulletRow.querySelector('.bullet-text');
                         bullets.push({
-                            tailored_text: bulletRow.querySelector('.bullet-text').value,
+                            id: textArea.getAttribute('data-id') || "",
+                            tailored_text: textArea.value,
                             highly_recommended: bulletRow.querySelector('.bullet-checkbox').checked,
                             original_text: "",
                             reason: ""
@@ -296,8 +699,10 @@
                 projBlock.querySelectorAll('.bullet-row').forEach(bulletRow => {
                     const isChecked = bulletRow.querySelector('.bullet-checkbox').checked;
                     if (isChecked) {
+                        const textArea = bulletRow.querySelector('.bullet-text');
                         bullets.push({
-                            tailored_text: bulletRow.querySelector('.bullet-text').value,
+                            id: textArea.getAttribute('data-id') || "",
+                            tailored_text: textArea.value,
                             highly_recommended: bulletRow.querySelector('.bullet-checkbox').checked,
                             original_text: "",
                             reason: ""
@@ -356,41 +761,125 @@
             }, 1200); // 1.2s debounce for generating PDFs
         }
         
-        async function submitAiAdjustment() {
-            const input = document.getElementById('ai-instruction');
-            const btn = document.getElementById('ai-adjust-btn');
+
+        function toggleSummaryAI() {
+            const box = document.getElementById('summary-ai-box');
+            box.classList.toggle('hidden');
+            if (!box.classList.contains('hidden')) {
+                document.getElementById('summary-ai-instruction').focus();
+            }
+        }
+
+        async function adjustSummaryWithAI() {
+            const input = document.getElementById('summary-ai-instruction');
+            const btn = document.getElementById('btn-adjust-summary');
+            const summaryTextArea = document.getElementById('summary-input');
             const instruction = input.value.trim();
             
             if (!instruction) return;
             
-            // Force save current state first so AI sees latest edits
-            await forceSave();
-            
             // UI Loading state
             input.disabled = true;
             btn.disabled = true;
+            const originalIcon = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
+            summaryTextArea.style.opacity = '0.5';
             
             try {
-                const res = await fetch(`/resume/builder/{{ job.id }}/adjust`, {
+                const res = await fetch(`/resume/builder/{{ job.id }}/adjust-summary`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ instruction })
+                    body: JSON.stringify({ 
+                        instruction: instruction,
+                        current_summary: summaryTextArea.value 
+                    })
                 });
                 
                 if (res.ok) {
-                    window.location.reload();
+                    const data = await res.json();
+                    summaryTextArea.value = data.summary;
+                    document.getElementById('summary-ai-box').classList.add('hidden');
+                    debounceSave();
                 } else {
                     const err = await res.json();
                     alert("Adjustment failed: " + err.detail);
                 }
             } catch (e) {
-                alert("Network error.");
+                alert("Network error occurred while contacting AI.");
             } finally {
                 input.disabled = false;
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-arrow-up text-xs"></i>';
+                btn.innerHTML = originalIcon;
                 input.value = '';
+                summaryTextArea.style.opacity = '1';
+            }
+        }
+        function toggleSkillsAI() {
+            const box = document.getElementById('skills-ai-box');
+            box.classList.toggle('hidden');
+            if (!box.classList.contains('hidden')) {
+                document.getElementById('skills-ai-instruction').focus();
+            }
+        }
+
+        async function adjustSkillsWithAI() {
+            const input = document.getElementById('skills-ai-instruction');
+            const btn = document.getElementById('btn-adjust-skills');
+            const container = document.getElementById('skills-container');
+            const instruction = input.value.trim();
+            
+            if (!instruction) return;
+            
+            // Gather current skills
+            const currentSkills = Array.from(document.querySelectorAll('.skill-badge')).map(s => s.getAttribute('data-skill'));
+            
+            // UI Loading state
+            input.disabled = true;
+            btn.disabled = true;
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
+            container.style.opacity = '0.5';
+            
+            try {
+                const res = await fetch(`/resume/builder/{{ job.id }}/adjust-skills`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        instruction: instruction,
+                        current_skills: currentSkills 
+                    })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    
+                    // Rebuild skills UI
+                    container.innerHTML = '';
+                    data.skills.forEach(skill => {
+                        const span = document.createElement('span');
+                        span.className = 'skill-badge px-3 py-1 bg-blue-900/40 text-blue-300 rounded-full text-sm border border-blue-700/50 font-medium flex items-center';
+                        span.setAttribute('data-skill', skill);
+                        span.innerHTML = `
+                            ${skill}
+                            <button type="button" onclick="this.parentElement.remove(); debounceSave();" class="ml-2 hover:text-red-400 transition"><i class="fa-solid fa-xmark"></i></button>
+                        `;
+                        container.appendChild(span);
+                    });
+                    
+                    document.getElementById('skills-ai-box').classList.add('hidden');
+                    debounceSave();
+                } else {
+                    const err = await res.json();
+                    alert("Adjustment failed: " + err.detail);
+                }
+            } catch (e) {
+                alert("Network error occurred while contacting AI.");
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                btn.innerHTML = originalIcon;
+                input.value = '';
+                container.style.opacity = '1';
             }
         }
     </script>

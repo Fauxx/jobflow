@@ -66,10 +66,11 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
     user_skills = set()
     if profile and profile.skills:
         for s in profile.skills:
-            parts = [p.strip().lower() for p in s.name.split(',')]
-            for p in parts:
-                if p:
-                    user_skills.add(p)
+            if s.items:
+                parts = [p.strip().lower() for p in s.items.split(',')]
+                for p in parts:
+                    if p:
+                        user_skills.add(p)
     user_skills = list(user_skills)
         
     all_jobs_to_score = jobs + triage_jobs + pipeline_jobs
@@ -85,7 +86,15 @@ async def dashboard(request: Request, status: str = "NEW", db: Session = Depends
         job.match_score = int(min((matches / max_skills_expected) * 100, 100)) if max_skills_expected > 0 else 0
 
     if triage_jobs:
-        triage_jobs.sort(key=lambda j: (j.match_score, j.date_posted.timestamp() if j.date_posted else 0), reverse=True)
+        # Sort pending jobs to the very top, then by match score, then date
+        triage_jobs.sort(
+            key=lambda j: (
+                1 if (j.title and j.title.startswith('[Pending')) else 0,
+                j.match_score, 
+                j.date_posted.timestamp() if j.date_posted else (j.id or 0)
+            ), 
+            reverse=True
+        )
 
     import datetime
     context = {

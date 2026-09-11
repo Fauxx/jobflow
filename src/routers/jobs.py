@@ -12,6 +12,30 @@ from src.core.dependencies import get_current_user
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
+class ManualImportRequest(BaseModel):
+    title: str
+    company: str
+    description: Optional[str] = None
+
+@router.post("/manual")
+async def import_job_manual(req: ManualImportRequest, db: Session = Depends(get_db)):
+    """Manually add a job directly to Triage inbox."""
+    user = get_current_user(db)
+    
+    # Create the job with no url (or a dummy one to avoid constraint issues if any, but source_url is usually optional/nullable)
+    job = Job(
+        title=req.title,
+        company=req.company,
+        description=req.description,
+        source="Manual",
+        source_url=""
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    
+    return {"status": "success", "id": job.id, "title": job.title, "company": job.company}
+
 class JobSaveRequest(BaseModel):
     external_job_id: Optional[str] = None
     source: str
@@ -78,6 +102,7 @@ async def get_job_details(job_id: int, db: Session = Depends(get_db)):
         "title": job.title,
         "company": job.company,
         "location": job.location,
+        "url": job.source_url,
         "description": job.description or ""
     }
 
@@ -85,6 +110,7 @@ class JobDetailsUpdate(BaseModel):
     title: Optional[str] = None
     company: Optional[str] = None
     location: Optional[str] = None
+    url: Optional[str] = None
     description: Optional[str] = None
 
 @router.put("/{job_id}/details")
@@ -99,6 +125,8 @@ async def update_job_details(job_id: int, payload: JobDetailsUpdate, db: Session
         job.company = payload.company
     if payload.location is not None:
         job.location = payload.location
+    if payload.url is not None:
+        job.source_url = payload.url
     if payload.description is not None:
         job.description = payload.description
         

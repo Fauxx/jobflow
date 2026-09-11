@@ -1,0 +1,25 @@
+        async function openCoverLetterPreview() {
+            const content = document.getElementById('cover-letter-box').value;
+            const jobId = document.getElementById('cl-job-id').value;
+            if(!content.trim()) { alert("Please draft a cover letter first!"); return; }
+            
+            document.getElementById("cl-preview-modal").classList.remove("hidden");
+            const iframe = document.getElementById('cl-pdf-iframe');
+            
+            try {
+                const res = await fetch(`/applications/${jobId}/cover-letter/pdf`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ content })
+                });
+                if(res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    iframe.src = url;
+                } else {
+                    alert("Failed to generate PDF preview.");
+                }
+            } catch(e) {
+                alert("Network error.");
+            }
+        }

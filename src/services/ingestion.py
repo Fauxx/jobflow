@@ -104,7 +104,7 @@ class UniversalScraperService:
         
         # Check if job already exists
         existing_job = db.query(Job).filter(Job.source_url == url).first()
-        if existing_job:
+        if existing_job and not existing_job.title.startswith("[Pending AI Extraction]"):
             return existing_job
             
         # 1. Fetch raw text instantly (No AI)
@@ -113,28 +113,38 @@ class UniversalScraperService:
         page_title = data["title"]
         
         if not raw_text or len(raw_text) < 100:
+            if existing_job:
+                existing_job.description = "[Failed] Could not extract enough text. The page might be blocked."
+                db.commit()
             raise ValueError("Could not extract enough text from the URL. The page might be heavily blocked.")
             
-        # 2. Extract basic info without AI for temporary display
-        # We can try to guess the company from the domain or title
         guessed_company = domain.split('.')[0].capitalize()
         
-        # 3. Save to Database instantly
-        new_job = Job(
-            title=page_title, # Temporary title
-            company=guessed_company, # Temporary company
-            location="Unspecified",
-            description="[AI Extraction Pending] Click 'Approve & Tailor' to process this job.",
-            raw_scraped_text=raw_text,
-            source=domain,
-            source_url=url
-        )
-        
-        db.add(new_job)
-        db.commit()
-        db.refresh(new_job)
-        
-        return new_job
+        if existing_job:
+            # Update the pending job
+            existing_job.title = page_title
+            existing_job.company = guessed_company
+            existing_job.raw_scraped_text = raw_text
+            existing_job.description = "[AI Extraction Pending] Click 'Approve & Tailor' to process this job."
+            db.commit()
+            db.refresh(existing_job)
+            return existing_job
+        else:
+            # 3. Save to Database instantly (fallback if not queued via UI)
+            new_job = Job(
+                title=page_title, # Temporary title
+                company=guessed_company, # Temporary company
+                location="Unspecified",
+                description="[AI Extraction Pending] Click 'Approve & Tailor' to process this job.",
+                raw_scraped_text=raw_text,
+                source=domain,
+                source_url=url
+            )
+            
+            db.add(new_job)
+            db.commit()
+            db.refresh(new_job)
+            return new_job
 
     @staticmethod
     def hydrate_job(db: Session, job: Job):

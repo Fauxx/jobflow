@@ -1,0 +1,39 @@
+        async function editJobDescription(jobId, title) {
+            document.getElementById('jd-job-id').value = jobId;
+            document.getElementById('jd-job-title').innerText = title;
+            const contentBox = document.getElementById('jd-content');
+            contentBox.value = "Fetching description...";
+            document.getElementById('jd-modal').classList.remove('hidden');
+            
+            try {
+                const res = await fetch(`/jobs/${jobId}/details`);
+                const data = await res.json();
+                contentBox.value = data.description || '';
+            } catch (e) {
+                contentBox.value = "Failed to load job description.";
+            }
+        }
+        
+        async function saveJobDescription() {
+            const jobId = document.getElementById('jd-job-id').value;
+            const content = document.getElementById('jd-content').value;
+            const btn = document.getElementById('btn-save-jd');
+            const original = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+            btn.disabled = true;
+            
+            try {
+                await fetch(`/jobs/${jobId}/details`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ description: content })
+                });
+                document.getElementById('jd-modal').classList.add('hidden');
+            } catch(e) {
+                alert("Failed to save description.");
+            }
+            
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }

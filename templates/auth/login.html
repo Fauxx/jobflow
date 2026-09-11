@@ -25,8 +25,14 @@
             {% endif %}
             <form method="POST" action="/auth/login" class="space-y-5">
                 <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Email Address</label>
+                    <input type="email" name="email" autofocus required
+                        class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                        placeholder="admin@jobflow.com">
+                </div>
+                <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Password</label>
-                    <input type="password" name="password" autofocus required
+                    <input type="password" name="password" required
                         class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                         placeholder="Enter your password">
                 </div>

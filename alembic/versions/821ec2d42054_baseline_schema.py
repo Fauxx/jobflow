@@ -1,8 +1,8 @@
-"""Initial schema
+"""baseline_schema
 
-Revision ID: 36771d8dd2ea
+Revision ID: 821ec2d42054
 Revises: 
-Create Date: 2026-08-24 22:35:57.905667
+Create Date: 2026-09-11 13:24:13.643451
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '36771d8dd2ea'
+revision: str = '821ec2d42054'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -35,6 +35,7 @@ def upgrade() -> None:
     sa.Column('salary_display', sa.String(), nullable=True),
     sa.Column('workplace_type', sa.String(), nullable=True),
     sa.Column('experience_level', sa.String(), nullable=True),
+    sa.Column('raw_scraped_text', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('scraped_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.PrimaryKeyConstraint('id'),
@@ -46,6 +47,7 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
+    sa.Column('password_hash', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
@@ -56,6 +58,21 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('job_id', sa.Integer(), nullable=False),
     sa.Column('status', sa.String(), nullable=False),
+    sa.Column('email_subject', sa.String(), nullable=True),
+    sa.Column('email_body', sa.String(), nullable=True),
+    sa.Column('cover_letter', sa.String(), nullable=True),
+    sa.Column('ai_draft_json', sa.String(), nullable=True),
+    sa.Column('sub_status', sa.String(), nullable=False),
+    sa.Column('recruiter_name', sa.String(), nullable=True),
+    sa.Column('interview_date', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('salary_expected', sa.String(), nullable=True),
+    sa.Column('salary_offered', sa.String(), nullable=True),
+    sa.Column('pipeline_notes', sa.String(), nullable=True),
+    sa.Column('date_applied', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('date_screening', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('date_interview', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('date_offer', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('date_rejected', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['job_id'], ['jobs.id'], ondelete='CASCADE'),
@@ -76,6 +93,16 @@ def upgrade() -> None:
     op.create_table('user_profiles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(), nullable=True),
+    sa.Column('email', sa.String(), nullable=True),
+    sa.Column('phone', sa.String(), nullable=True),
+    sa.Column('location', sa.String(), nullable=True),
+    sa.Column('linkedin_url', sa.String(), nullable=True),
+    sa.Column('github_url', sa.String(), nullable=True),
+    sa.Column('portfolio_url', sa.String(), nullable=True),
+    sa.Column('headline', sa.String(), nullable=True),
+    sa.Column('summary', sa.Text(), nullable=True),
+    sa.Column('master_summary_context', sa.Text(), nullable=True),
     sa.Column('status', sa.Enum('DRAFT', 'VERIFIED', name='profilestatus'), nullable=False),
     sa.Column('career_goals', sa.Text(), nullable=True),
     sa.Column('target_roles', sa.Text(), nullable=True),
@@ -83,16 +110,31 @@ def upgrade() -> None:
     sa.Column('location_prefs', sa.Text(), nullable=True),
     sa.Column('personalization_prefs', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id')
     )
     op.create_index(op.f('ix_user_profiles_id'), 'user_profiles', ['id'], unique=False)
+    op.create_table('experiences',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('profile_id', sa.Integer(), nullable=False),
+    sa.Column('company', sa.String(), nullable=False),
+    sa.Column('role', sa.String(), nullable=True),
+    sa.Column('location', sa.String(), nullable=True),
+    sa.Column('date_range', sa.String(), nullable=True),
+    sa.Column('detailed_context', sa.Text(), nullable=True),
+    sa.Column('order', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['profile_id'], ['user_profiles.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_experiences_id'), 'experiences', ['id'], unique=False)
     op.create_table('profile_achievements',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('profile_id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('date_str', sa.String(), nullable=True),
+    sa.Column('order', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['profile_id'], ['user_profiles.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -103,41 +145,26 @@ def upgrade() -> None:
     sa.Column('institution', sa.String(), nullable=False),
     sa.Column('degree', sa.String(), nullable=False),
     sa.Column('date_str', sa.String(), nullable=True),
+    sa.Column('location', sa.String(), nullable=True),
+    sa.Column('order', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['profile_id'], ['user_profiles.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_profile_education_id'), 'profile_education', ['id'], unique=False)
-    op.create_table('profile_experience',
+    op.create_table('projects',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('profile_id', sa.Integer(), nullable=False),
-    sa.Column('company', sa.String(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('achievements', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['profile_id'], ['user_profiles.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_profile_experience_id'), 'profile_experience', ['id'], unique=False)
-    op.create_table('profile_projects',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('profile_id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(), nullable=False),
-    sa.Column('description', sa.Text(), nullable=True),
     sa.Column('role', sa.String(), nullable=True),
+    sa.Column('date_range', sa.String(), nullable=True),
+    sa.Column('tech_stack', sa.String(), nullable=True),
     sa.Column('url', sa.String(), nullable=True),
+    sa.Column('detailed_context', sa.Text(), nullable=True),
+    sa.Column('order', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['profile_id'], ['user_profiles.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_profile_projects_id'), 'profile_projects', ['id'], unique=False)
-    op.create_table('profile_skills',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('profile_id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(), nullable=False),
-    sa.Column('proficiency', sa.String(), nullable=True),
-    sa.ForeignKeyConstraint(['profile_id'], ['user_profiles.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_profile_skills_id'), 'profile_skills', ['id'], unique=False)
+    op.create_index(op.f('ix_projects_id'), 'projects', ['id'], unique=False)
     op.create_table('resume_versions',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('application_id', sa.Integer(), nullable=False),
@@ -149,33 +176,47 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_resume_versions_id'), 'resume_versions', ['id'], unique=False)
-    op.create_table('skill_evidence',
+    op.create_table('skills',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('skill_id', sa.Integer(), nullable=True),
-    sa.Column('evidence_type', sa.Enum('PROJECT', 'EXPERIENCE', name='evidencetype'), nullable=False),
-    sa.Column('evidence_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['skill_id'], ['profile_skills.id'], ondelete='CASCADE'),
+    sa.Column('profile_id', sa.Integer(), nullable=False),
+    sa.Column('category', sa.String(), nullable=True),
+    sa.Column('items', sa.Text(), nullable=True),
+    sa.Column('order', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['profile_id'], ['user_profiles.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_skills_id'), 'skills', ['id'], unique=False)
+    op.create_table('bullets',
+    sa.Column('id', sa.String(), nullable=False),
+    sa.Column('experience_id', sa.Integer(), nullable=True),
+    sa.Column('project_id', sa.Integer(), nullable=True),
+    sa.Column('text', sa.Text(), nullable=False),
+    sa.Column('order', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['experience_id'], ['experiences.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_bullets_id'), 'bullets', ['id'], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('skill_evidence')
+    op.drop_index(op.f('ix_bullets_id'), table_name='bullets')
+    op.drop_table('bullets')
+    op.drop_index(op.f('ix_skills_id'), table_name='skills')
+    op.drop_table('skills')
     op.drop_index(op.f('ix_resume_versions_id'), table_name='resume_versions')
     op.drop_table('resume_versions')
-    op.drop_index(op.f('ix_profile_skills_id'), table_name='profile_skills')
-    op.drop_table('profile_skills')
-    op.drop_index(op.f('ix_profile_projects_id'), table_name='profile_projects')
-    op.drop_table('profile_projects')
-    op.drop_index(op.f('ix_profile_experience_id'), table_name='profile_experience')
-    op.drop_table('profile_experience')
+    op.drop_index(op.f('ix_projects_id'), table_name='projects')
+    op.drop_table('projects')
     op.drop_index(op.f('ix_profile_education_id'), table_name='profile_education')
     op.drop_table('profile_education')
     op.drop_index(op.f('ix_profile_achievements_id'), table_name='profile_achievements')
     op.drop_table('profile_achievements')
+    op.drop_index(op.f('ix_experiences_id'), table_name='experiences')
+    op.drop_table('experiences')
     op.drop_index(op.f('ix_user_profiles_id'), table_name='user_profiles')
     op.drop_table('user_profiles')
     op.drop_index(op.f('ix_master_resumes_id'), table_name='master_resumes')

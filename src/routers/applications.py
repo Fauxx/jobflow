@@ -121,11 +121,16 @@ async def builder_page(request: Request, job_id: int, db: Session = Depends(get_
         except Exception:
             pass
 
+    # Get full profile dictionary for unused bullets feature
+    from src.services.profile_service import get_full_profile
+    full_profile_dict = get_full_profile(db, user.id)
+
     context = {
         "request": request,
         "job": job,
         "application": app,
         "profile": profile,
+        "master_profile_json": json.dumps(full_profile_dict),
         "existing_draft": json.dumps(existing_draft) if existing_draft else "null",
     }
     return templates.TemplateResponse(
@@ -388,6 +393,8 @@ async def update_pipeline_details(job_id: int, payload: PipelineDetails, db: Ses
             app.interview_date = dateutil.parser.parse(payload.interview_date)
         except Exception:
             pass
+    elif payload.interview_date == "":
+        app.interview_date = None
             
     db.commit()
     return {"status": "success"}

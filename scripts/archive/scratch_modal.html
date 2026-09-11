@@ -1,0 +1,47 @@
+    <!-- Pipeline Modal -->
+    <div id="pipeline-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-2xl relative">
+            <input type="hidden" id="pipeline-job-id">
+            <h2 class="text-xl font-black text-white mb-1"><i class="fa-solid fa-chart-line text-blue-500 mr-2"></i>Pipeline Details</h2>
+            <p id="pipeline-job-title" class="text-gray-400 text-sm mb-5 font-bold"></p>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Recruiter / Contact Name</label>
+                    <input type="text" id="pipe-recruiter" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Next Interview Date</label>
+                    <input type="date" id="pipe-date" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Expected Salary</label>
+                    <input type="text" id="pipe-expected" placeholder="$120,000" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Offered Salary</label>
+                    <input type="text" id="pipe-offered" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-green-500">
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Interview Notes / Feedback</label>
+                <textarea id="pipe-notes" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+            
+            <div class="bg-blue-900/10 border border-blue-900/30 rounded-xl p-4 mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-bold text-blue-400"><i class="fa-solid fa-robot mr-1"></i> AI Follow-Up Generator</h3>
+                    <button onclick="generateFollowUp()" id="btn-generate-followup" class="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded shadow transition">Draft Email</button>
+                </div>
+                <textarea id="pipe-email-draft" rows="4" placeholder="Click 'Draft Email' to write a context-aware follow-up email." class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-gray-300 text-xs font-mono"></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button onclick="document.getElementById('pipeline-modal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-gray-400 hover:text-white text-sm font-bold transition">Close</button>
+                <button onclick="savePipelineDetails()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-floppy-disk"></i><span>Save Details</span>
+                </button>
+            </div>
+        </div>
+    </div>

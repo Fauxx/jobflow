@@ -20,11 +20,12 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 
 from src.models.base import Base
-from src.models.user import User
-from src.models.profile import UserProfile, ProfileSkill, ProfileProject, ProfileExperience, ProfileEducation, ProfileAchievement, skill_evidence
-from src.models.resume import MasterResume, ResumeVersion
-from src.models.job import Job
-from src.models.application import Application
+from src.models.base import Base
+import src.models.user
+import src.models.profile
+import src.models.resume
+import src.models.job
+import src.models.application
 from src.core.config import settings
 
 target_metadata = Base.metadata

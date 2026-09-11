@@ -17,38 +17,35 @@ from src.core.config import settings
 
 
 class TailoredBullet(BaseModel):
-    original_text: str = Field(description="The original bullet from the candidate's profile")
-    tailored_text: str = Field(description="AI-rephrased version optimized for this job")
+    id: str = Field(default="", description="The unique ID of the bullet selected from the master profile")
+    original_text: str = Field(default="", description="The exact original bullet from the candidate's profile")
+    tailored_text: str = Field(default="", description="Must be IDENTICAL to the original_text. Do not rewrite or rephrase.")
     highly_recommended: bool = Field(description="True if this is an absolute perfect match for the job description")
     reason: str = Field(description="Brief reason why this bullet was recommended or not")
-
 
 class TailoredExperience(BaseModel):
     company: str
     title: str
     location: str = ""
     date_range: str = ""
-    bullets: List[TailoredBullet] = Field(description="Generate 6-8 tailored bullets even if they won't all fit, prioritizing matches with the JD.")
-
+    bullets: List[TailoredBullet] = Field(description="Select 6-8 relevant bullets verbatim from the master profile. Do not rewrite them.")
 
 class TailoredProject(BaseModel):
     name: str
     role: str = ""
     date_range: str = ""
     tech_stack: str = ""
-    bullets: List[TailoredBullet] = Field(description="Generate 4-6 tailored bullets even if they won't all fit.")
-
+    bullets: List[TailoredBullet] = Field(description="Select 4-6 relevant bullets verbatim. Do not rewrite them.")
 
 class TailoredResume(BaseModel):
     """The full AI-suggested resume. Every field is a suggestion the user can edit."""
     summary: str = Field(description="AI-written professional summary tailored to this job")
     skills: List[str] = Field(description="A flat list of the most relevant skills for this job")
-    experiences: List[TailoredExperience] = Field(description="Selected experiences with over-generated tailored bullets")
-    projects: List[TailoredProject] = Field(description="Selected projects with over-generated bullets")
+    experiences: List[TailoredExperience] = Field(description="Selected experiences with verbatim bullets")
+    projects: List[TailoredProject] = Field(description="Selected projects with verbatim bullets")
     certifications: List[str] = Field(default_factory=list)
     matched_skills: List[str] = Field(default_factory=list, description="Skills candidate has that JD wants")
     missing_skills: List[str] = Field(default_factory=list, description="Skills JD wants that candidate lacks")
-
 
 class ResumeTailorService:
     """Generates AI-suggested resume content. All outputs are suggestions for human review."""
@@ -63,14 +60,15 @@ class ResumeTailorService:
         candidate_context = build_context(db, job, user_id)
 
         # 2. Call AI to generate tailored resume sections directly from the Job Description
-        prompt = f"""You are a Fact-Anchored Resume Tailoring Engine.
+        prompt = f"""You are a Fact-Anchored Resume Curator Engine.
 
 STRICT RULES:
 1. You ONLY use information from the Candidate Knowledge Base below. 
 2. NEVER invent skills, tools, metrics, companies, dates, or achievements.
-3. You may REPHRASE bullets (stronger action verbs, incorporate JD keywords) but the core factual claim must remain 100% true to the source.
-4. If the JD requires a skill the candidate does NOT have, list it under "missing_skills" — do NOT pretend the candidate has it.
-5. Follow ATS resume formatting: action verb + task + measurable result.
+3. DO NOT REWRITE OR REPHRASE BULLETS. Your job is to SELECT the most relevant existing bullets verbatim from the candidate's master profile.
+4. IMPORTANT: When selecting a bullet, you MUST provide its exact ID and its exact original text.
+5. If the JD requires a skill the candidate does NOT have, list it under "missing_skills" — do NOT pretend the candidate has it.
+6. Provide a brief explanation for why each verbatim bullet was selected and whether it is highly recommended based on the JD.
 
 ---
 
@@ -80,7 +78,7 @@ Company: {job.company}
 Location: {job.location or 'Not specified'}
 
 ### Full Job Description
-Read this description carefully, extract the core requirements mentally, and use them to tailor the resume:
+Read this description carefully, extract the core requirements mentally, and use them to select the best matching bullets:
 {job.description or 'No description available'}
 
 ---
@@ -91,7 +89,7 @@ Read this description carefully, extract the core requirements mentally, and use
 ---
 
 ## YOUR TASK
-Generate a tailored resume for THIS specific job. Return JSON with this exact structure:
+Generate a curated resume for THIS specific job. Return JSON with this exact structure:
 
 {{
   "summary": "A 3-4 sentence professional summary tailored to this job. Use keywords from the JD naturally. Reference the candidate's most relevant experience.",
@@ -101,15 +99,16 @@ Generate a tailored resume for THIS specific job. Return JSON with this exact st
   "experiences": [
     {{
       "company": "Company Name",
-      "title": "Job Title", 
-      "location": "City, Country",
-      "date_range": "Month YYYY – Month YYYY",
+      "title": "Role Title",
+      "location": "Location",
+      "date_range": "Dates",
       "bullets": [
         {{
-          "original_text": "The exact original bullet from the candidate profile",
-          "tailored_text": "The rephrased version optimized for this JD",
+          "id": "The exact ID of the bullet (e.g. uuid)",
+          "original_text": "The exact text of the bullet",
+          "tailored_text": "The exact text of the bullet (IDENTICAL to original_text)",
           "highly_recommended": true,
-          "reason": "Directly matches the cloud infrastructure requirement"
+          "reason": "Why this bullet was chosen"
         }}
       ]
     }}
@@ -118,15 +117,16 @@ Generate a tailored resume for THIS specific job. Return JSON with this exact st
   "projects": [
     {{
       "name": "Project Name",
-      "role": "Role in project",
-      "date_range": "Date range",
-      "tech_stack": "Key technologies",
+      "role": "Role",
+      "date_range": "Dates",
+      "tech_stack": "Technologies",
       "bullets": [
         {{
-          "original_text": "Original bullet",
-          "tailored_text": "Tailored bullet",
-          "highly_recommended": false,
-          "reason": "Good context but not strictly requested by JD"
+          "id": "The exact ID of the bullet",
+          "original_text": "The exact text of the bullet",
+          "tailored_text": "The exact text of the bullet (IDENTICAL to original_text)",
+          "highly_recommended": true,
+          "reason": "Why this bullet was chosen"
         }}
       ]
     }}
@@ -138,7 +138,6 @@ Generate a tailored resume for THIS specific job. Return JSON with this exact st
   "missing_skills": ["Skills the JD requires that the candidate DOES NOT have"]
 }}
 
-IMPORTANT:
 - OVER-GENERATE BULLETS: For each experience, generate 6-8 strong, tailored bullets. For projects, generate 4-6. The user will manually filter them in the UI.
 - HIGHLY RECOMMENDED: Set `highly_recommended` to `true` for the 3 or 4 absolute best bullets in each section that perfectly match the JD.
 - Select all highly relevant experiences and projects.
@@ -173,6 +172,96 @@ IMPORTANT:
             ).model_dump()
 
     @staticmethod
+    def adjust_summary(db: Session, job: Job, user_id: int, current_summary: str, instruction: str) -> str:
+        """
+        Rewrites only the professional summary based on user instruction.
+        """
+        candidate_context = build_context(db, job, user_id)
+        
+        prompt = f"""You are an expert Resume Writer.
+The user wants you to rewrite their Professional Summary for the job: {job.title} at {job.company}.
+
+USER INSTRUCTION:
+"{instruction}"
+
+CURRENT SUMMARY:
+"{current_summary}"
+
+## JOB DESCRIPTION (for context):
+{job.description or 'No description available'}
+
+## MASTER CANDIDATE PROFILE:
+{candidate_context}
+
+INSTRUCTIONS:
+Write ONLY the new professional summary. Do not output JSON, do not include markdown blocks like ```, just return the raw text of the updated summary.
+Make it punchy, professional, and directly aligned with the user's instructions.
+"""
+        result = call_gemini(prompt).strip()
+        
+        # Guard against the model disobeying and returning JSON
+        if result.startswith("{") or result.startswith("["):
+            try:
+                import json
+                parsed = json.loads(result)
+                if isinstance(parsed, list) and len(parsed) > 0:
+                    parsed = parsed[0]
+                if isinstance(parsed, dict):
+                    # extract 'summary' or 'professional_summary'
+                    result = parsed.get("professional_summary", parsed.get("summary", result))
+            except Exception:
+                pass
+                
+        # Guard against markdown code blocks
+        if result.startswith("```"):
+            result = result.replace("```json", "").replace("```text", "").replace("```", "").strip()
+            
+        return result
+
+    @staticmethod
+    def adjust_skills(db: Session, job: Job, user_id: int, current_skills: list, instruction: str) -> list:
+        """
+        Rewrites only the skills section based on user instruction.
+        """
+        candidate_context = build_context(db, job, user_id)
+        
+        prompt = f"""You are an expert Resume Writer.
+The user wants you to adjust the Skills section of their tailored resume for the job: {job.title} at {job.company}.
+
+USER INSTRUCTION:
+"{instruction}"
+
+CURRENT SKILLS:
+{json.dumps(current_skills)}
+
+## JOB DESCRIPTION (for context):
+{job.description or 'No description available'}
+
+## MASTER CANDIDATE PROFILE:
+{candidate_context}
+
+INSTRUCTIONS:
+Return a JSON array of strings representing the updated skills list.
+Example: ["Python", "FastAPI", "React"]
+Do not invent skills the user does not have. Only use skills from the Master Candidate Profile.
+Output ONLY a valid JSON array. Do not wrap it in markdown.
+"""
+        result = call_gemini(prompt).strip()
+        if result.startswith("```"):
+            result = result.replace("```json", "").replace("```", "").strip()
+            
+        try:
+            parsed = json.loads(result)
+            if isinstance(parsed, list):
+                return [str(s) for s in parsed]
+            elif isinstance(parsed, dict) and "skills" in parsed:
+                return [str(s) for s in parsed["skills"]]
+        except Exception:
+            pass
+            
+        return current_skills
+
+    @staticmethod
     def adjust_resume(db: Session, job: Job, user_id: int, current_draft: dict, instruction: str) -> dict:
         """
         Takes the current resume draft and a user instruction, and returns an updated draft.
@@ -180,8 +269,13 @@ IMPORTANT:
         # Fetch the master profile so the AI can pull in new projects/experiences if requested
         candidate_context = build_context(db, job, user_id)
 
-        prompt = f"""You are a Fact-Anchored Resume Tailoring Engine.
+        prompt = f"""You are a Fact-Anchored Resume Curator Engine.
 The user wants to adjust their currently tailored resume for the job: {job.title} at {job.company}.
+
+STRICT RULES:
+1. NEVER invent skills, metrics, companies, dates, or achievements.
+2. DO NOT REWRITE OR REPHRASE BULLETS. If you add new bullets, SELECT them verbatim from the master profile.
+3. Every tailored_text must be IDENTICAL to the original_text.
 
 USER INSTRUCTION:
 "{instruction}"

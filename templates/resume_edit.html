@@ -92,9 +92,11 @@
                 <div class="flex space-x-3 items-center skill-row">
                     <input type="text" placeholder="Category" value="{{ skill['category'] }}" class="w-1/3 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-semibold skill-cat">
                     <input type="text" placeholder="Items (comma separated)" value="{{ skill['items'] }}" class="w-2/3 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 skill-items">
+                    <button onclick="this.closest('.skill-row').remove()" class="text-red-400 hover:text-red-300 px-2"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 {% endfor %}
             </div>
+            <button onclick="addSkill()" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Skill Category</button>
         </section>
 
         <!-- Engineering Projects -->
@@ -105,20 +107,29 @@
             </h2>
             <div id="projects-container" class="space-y-6">
                 {% for project in resume.projects %}
-                <div class="project-card bg-gray-850 p-4 rounded-lg border border-gray-750 space-y-3">
+                <div class="project-card bg-gray-850 p-4 rounded-lg border border-gray-750 space-y-3 relative">
+                    <button onclick="this.closest('.project-card').remove()" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
                     <div class="grid grid-cols-3 gap-3">
                         <input type="text" placeholder="Project Title" value="{{ project.title }}" class="col-span-2 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-bold proj-title">
                         <input type="text" placeholder="Date" value="{{ project.date }}" class="bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 proj-date">
                     </div>
                     <input type="text" placeholder="Role Description" value="{{ project.role }}" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-semibold proj-role">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Bullet Points (One per line)</label>
-                        <textarea rows="5" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-mono proj-bullets">{% for bullet in project.bullets %}{{ bullet }}
-{% endfor %}</textarea>
+                        <label class="block text-xs font-bold uppercase text-gray-400 mb-2">Bullet Points</label>
+                        <div class="proj-bullets-container space-y-2">
+                            {% for bullet in project.bullets %}
+                            <div class="flex items-start space-x-2 bullet-row">
+                                <textarea rows="2" data-id="{{ bullet.id if bullet.id else '' }}" class="flex-1 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-mono bullet-input">{{ bullet.text if bullet.text else bullet }}</textarea>
+                                <button onclick="this.closest('.bullet-row').remove()" class="mt-2 text-gray-500 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button onclick="addEditBullet(this.previousElementSibling)" class="mt-2 text-xs text-blue-400 hover:text-blue-300"><i class="fa-solid fa-plus mr-1"></i> Add Bullet</button>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            <button onclick="addProject()" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Project</button>
         </section>
 
         <!-- Professional Experience -->
@@ -129,7 +140,8 @@
             </h2>
             <div id="experience-container" class="space-y-6">
                 {% for exp in resume.experience %}
-                <div class="exp-card bg-gray-850 p-4 rounded-lg border border-gray-750 space-y-3">
+                <div class="exp-card bg-gray-850 p-4 rounded-lg border border-gray-750 space-y-3 relative">
+                    <button onclick="this.closest('.exp-card').remove()" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
                     <div class="grid grid-cols-3 gap-3">
                         <input type="text" placeholder="Company" value="{{ exp.company }}" class="col-span-2 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-bold exp-company">
                         <input type="text" placeholder="Date" value="{{ exp.date }}" class="bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 exp-date">
@@ -139,13 +151,21 @@
                         <input type="text" placeholder="Location" value="{{ exp.location }}" class="bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 exp-location">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Bullet Points (One per line)</label>
-                        <textarea rows="4" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-mono exp-bullets">{% for bullet in exp.bullets %}{{ bullet }}
-{% endfor %}</textarea>
+                        <label class="block text-xs font-bold uppercase text-gray-400 mb-2">Bullet Points</label>
+                        <div class="exp-bullets-container space-y-2">
+                            {% for bullet in exp.bullets %}
+                            <div class="flex items-start space-x-2 bullet-row">
+                                <textarea rows="2" data-id="{{ bullet.id if bullet.id else '' }}" class="flex-1 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-mono bullet-input">{{ bullet.text if bullet.text else bullet }}</textarea>
+                                <button onclick="this.closest('.bullet-row').remove()" class="mt-2 text-gray-500 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button onclick="addEditBullet(this.previousElementSibling)" class="mt-2 text-xs text-blue-400 hover:text-blue-300"><i class="fa-solid fa-plus mr-1"></i> Add Bullet</button>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            <button onclick="addExperience()" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Experience</button>
         </section>
 
         <!-- AI Master Profile Context (Background context for AI search/matching) -->
@@ -179,6 +199,20 @@
     </main>
 
     <script>
+        function generateUUID() {
+            return crypto.randomUUID ? crypto.randomUUID() : 'b-' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function addEditBullet(container) {
+            const div = document.createElement('div');
+            div.className = 'flex items-start space-x-2 bullet-row';
+            div.innerHTML = `
+                <textarea rows="2" data-id="${generateUUID()}" class="flex-1 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-mono bullet-input"></textarea>
+                <button onclick="this.closest('.bullet-row').remove()" class="mt-2 text-gray-500 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
         async function saveResume() {
             // Build skills list
             const skills = [];
@@ -196,7 +230,15 @@
                 const title = card.querySelector('.proj-title').value;
                 const date = card.querySelector('.proj-date').value;
                 const role = card.querySelector('.proj-role').value;
-                const bullets = card.querySelector('.proj-bullets').value.split('\n').filter(b => b.trim() !== '');
+                const bullets = [];
+                card.querySelectorAll('.bullet-input').forEach(input => {
+                    if (input.value.trim()) {
+                        bullets.push({
+                            id: input.getAttribute('data-id') || generateUUID(),
+                            text: input.value.trim()
+                        });
+                    }
+                });
                 if (title) {
                     projects.push({ title, date, role, bullets });
                 }
@@ -209,7 +251,15 @@
                 const date = card.querySelector('.exp-date').value;
                 const role = card.querySelector('.exp-role').value;
                 const location = card.querySelector('.exp-location').value;
-                const bullets = card.querySelector('.exp-bullets').value.split('\n').filter(b => b.trim() !== '');
+                const bullets = [];
+                card.querySelectorAll('.bullet-input').forEach(input => {
+                    if (input.value.trim()) {
+                        bullets.push({
+                            id: input.getAttribute('data-id') || generateUUID(),
+                            text: input.value.trim()
+                        });
+                    }
+                });
                 if (company) {
                     experience.push({ company, date, role, location, bullets });
                 }
@@ -254,6 +304,59 @@
             setTimeout(() => {
                 toast.classList.add('hidden');
             }, 3000);
+        }
+
+        function addSkill() {
+            const container = document.getElementById('skills-container');
+            const row = document.createElement('div');
+            row.className = 'flex space-x-3 items-center skill-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Category" class="w-1/3 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-semibold skill-cat">
+                <input type="text" placeholder="Items (comma separated)" class="w-2/3 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 skill-items">
+                <button onclick="this.closest('.skill-row').remove()" class="text-red-400 hover:text-red-300 px-2"><i class="fa-solid fa-trash"></i></button>
+            `;
+            container.appendChild(row);
+        }
+
+        function addProject() {
+            const container = document.getElementById('projects-container');
+            const card = document.createElement('div');
+            card.className = 'project-card bg-gray-850 p-4 rounded-lg border border-gray-750 space-y-3 relative';
+            card.innerHTML = `
+                <button onclick="this.closest('.project-card').remove()" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                <div class="grid grid-cols-3 gap-3">
+                    <input type="text" placeholder="Project Title" class="col-span-2 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-bold proj-title">
+                    <input type="text" placeholder="Date" class="bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 proj-date">
+                </div>
+                <input type="text" placeholder="Role Description" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-semibold proj-role">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Bullet Points (One per line)</label>
+                    <textarea rows="5" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-mono proj-bullets"></textarea>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+
+        function addExperience() {
+            const container = document.getElementById('experience-container');
+            const card = document.createElement('div');
+            card.className = 'exp-card bg-gray-850 p-4 rounded-lg border border-gray-750 space-y-3 relative';
+            card.innerHTML = `
+                <button onclick="this.closest('.exp-card').remove()" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
+                <div class="grid grid-cols-3 gap-3">
+                    <input type="text" placeholder="Company" class="col-span-2 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-bold exp-company">
+                    <input type="text" placeholder="Date" class="bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 exp-date">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" placeholder="Role Title" class="bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-semibold exp-role">
+                    <input type="text" placeholder="Location" class="bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 exp-location">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Bullet Points (One per line)</label>
+                    <textarea rows="4" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-mono exp-bullets"></textarea>
+                </div>
+            `;
+            container.appendChild(card);
         }
     </script>
 </body>

@@ -1,0 +1,24 @@
+    <!-- JD Edit Modal -->
+    <div id="jd-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-4xl relative flex flex-col h-[85vh]">
+            <input type="hidden" id="jd-job-id">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h2 class="text-xl font-black text-white"><i class="fa-solid fa-file-lines text-blue-500 mr-2"></i>Edit Job Description</h2>
+                <button onclick="document.getElementById('jd-modal').classList.add('hidden')" class="text-gray-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <p id="jd-job-title" class="text-blue-400 text-sm font-bold mb-4 shrink-0"></p>
+            
+            <div class="flex-1 flex flex-col min-h-0 mb-4">
+                <p class="text-xs text-gray-500 mb-2">If the automated scraper failed (e.g. Cloudflare blocked it), you can manually paste the full job description below. Jobflow will use this text for AI Tailoring.</p>
+                <textarea id="jd-content" class="w-full flex-1 bg-gray-900 border border-gray-700 rounded-xl p-4 text-gray-300 text-sm font-mono focus:outline-none focus:border-blue-500 resize-none overflow-y-auto" placeholder="Loading description or waiting for manual paste..."></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-3 shrink-0">
+                <button onclick="document.getElementById('jd-modal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-gray-400 hover:text-white text-sm font-bold transition">Cancel</button>
+                <button onclick="saveJobDescription()" id="btn-save-jd" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-xl text-sm transition shadow-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-floppy-disk"></i><span>Save Description</span>
+                </button>
+            </div>
+        </div>
+    </div>

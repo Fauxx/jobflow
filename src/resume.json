@@ -58,15 +58,39 @@
     ],
     "projects": [
         {
+            "title": "Autonomous AI Job Email Agent",
+            "date": "Sept 2026",
+            "role": "DevOps & AI Automation Engineer",
+            "tech_stack": "Python, GitHub Actions (CI/CD), Terraform, Google Gemini 3.6 Flash, Telegram Bot API, IMAP",
+            "url": "https://github.com/Fauxx/ai-job-email-agent",
+            "bullets": [
+                "Architected a serverless Python agent executed entirely via GitHub Actions cron pipelines to autonomously monitor IMAP inboxes for recruitment opportunities 24/7.",
+                "Provisioned highly-secure CI/CD infrastructure using Terraform to dynamically inject GitHub Repository Secrets, treating the build environment purely as Infrastructure as Code (IaC).",
+                "Integrated Google Gemini 3.6 Flash LLM to parse and classify unstructured email payloads, filtering out spam and identifying specific job offers, rejections, and interview requests.",
+                "Developed an automated real-time notification engine using the Telegram Bot API to dispatch Markdown-formatted alerts containing AI summaries and metadata.",
+                "Extracted raw Message-ID headers from MIME payloads to programmatically construct direct, clickable Gmail search deep-links within Telegram alerts.",
+                "Engineered stateless execution using GitHub Actions Caching to track processed IMAP UIDs, completely eliminating duplicate API calls across ephemeral pipeline runs.",
+                "Implemented deterministic rate-limit protections (time.sleep delays) and robust Python boolean/JSON fallback parsing to gracefully handle AI formatting hallucinations."
+            ]
+        },
+        {
             "title": "IoT-Based Fire Monitoring & Cloud-Native Analytics Platform",
             "date": "Aug 2025 \u2013 June 2026",
             "role": "Project Leader, Lead Developer & Cloud Infrastructure Engineer",
             "tech_stack": "Node.js, Express.js, Python, PostgreSQL, InfluxDB 2.x, Redis, MQTT (Mosquitto), Telegraf, Docker, Kubernetes, Terraform, ArgoCD, Nginx, Prometheus, Grafana, Loki, Alloy, cAdvisor, GitHub Actions, Flyway, Kustomize, Calico, cert-manager, Cloudflare Tunnels, Azure AKS, Azure Key Vault, Azure ACR, DigitalOcean DOKS, Chart.js, Leaflet.js, EJS, TailwindCSS",
             "url": "https://github.com/Fauxx/FireMonitoringSystem",
             "bullets": [
-                "Provisioned multi-layer Kubernetes cloud infrastructure using Terraform with environment-isolated remote state backends, establishing robust disaster recovery and state management policies.",
-                "Automated deployments across dev and prod environments using ArgoCD GitOps and Kustomize, managing 17+ Kubernetes manifests for seamless continuous delivery.",
-                "Configured full-stack observability using Prometheus, Grafana, and Loki, provisioning custom dashboards to monitor cluster health, API latency (p95/p99), and system throughput."
+                "Architected and deployed a highly-available, multi-cloud Kubernetes infrastructure across DigitalOcean (DOKS) and Microsoft Azure (AKS) utilizing a 4-layer sequential Terraform pipeline.",
+                "Enforced strict cloud security standards via Azure Container Registry (ACR), Azure Key Vault integration with CSI Secrets Store drivers, and OIDC-based Entra ID authentication.",
+                "Implemented a pure GitOps continuous delivery model using ArgoCD and Kustomize, orchestrating over 17+ Kubernetes manifests across local (Kind), staging, and production environments.",
+                "Secured microservice communication by authoring Calico Zero-Trust NetworkPolicies, enforcing default-deny traffic routing to isolate sensitive data workloads.",
+                "Automated CI/CD pipelines via GitHub Actions, integrating strict pre-deployment checks including Trivy container vulnerability scanning and kubeconform manifest validation.",
+                "Engineered a real-time IoT telemetry ingestion pipeline utilizing Mosquitto MQTT brokers and Telegraf agents to bridge embedded ESP32/MCU sensor payloads directly into InfluxDB.",
+                "Developed a fault-tolerant Python ETL processor utilizing pandas to execute 5-minute downsampling and 30-minute stateful anomaly debouncing, virtually eliminating false-positive alerts.",
+                "Configured a full-stack observability pipeline utilizing Prometheus, Grafana, Loki, cAdvisor, and Node Exporter to monitor cluster health, API latency, and log aggregation.",
+                "Designed a full-stack command dashboard featuring Leaflet.js geolocation maps and Chart.js telemetry graphs, securely gated behind an Nginx reverse proxy with Grafana role-based access control.",
+                "Automated the programmatic generation and export of official Bureau of Fire Protection (BFP) standardized incident reports in PDF format for post-incident auditing.",
+                "Configured Cloudflare Tunnels to securely route external web traffic to internal Kubernetes services without exposing public IP addresses or managing complex firewall NAT rules."
             ]
         },
         {
@@ -76,20 +100,17 @@
             "tech_stack": "Python, FastAPI, PostgreSQL, Gemini 3.6-flash, SQLAlchemy, TailwindCSS, Docker, WeasyPrint, Playwright, Alembic, Jinja2, Pydantic, HTMX, python-docx",
             "url": "https://github.com/Fauxx/jobflow",
             "bullets": [
-                "Developed automation scripts using Python and Playwright to scrape and process complex web data, demonstrating strong scripting and automation capabilities."
-            ]
-        },
-        {
-            "title": "SandHub API: Clean Architecture C# REST Platform",
-            "date": "2026",
-            "role": "Solo Developer & Architect",
-            "tech_stack": "C#, ASP.NET Core 8.0, Entity Framework Core, PostgreSQL, JWT, MediatR, CQRS, Mapster, xUnit, Swagger/OpenAPI",
-            "url": "https://github.com/quickmsp/sandhub-api",
-            "bullets": [
-                "Designed a layered Clean Architecture (Domain, Application, Infrastructure, API) enforcing separation of concerns and testability across all service boundaries",
-                "Implemented CQRS pattern using MediatR to decouple command and query responsibilities, enabling independent scaling and clear audit trails for business operations",
-                "Built JWT authentication with refresh token rotation and role-based authorization middleware to secure all API endpoints",
-                "Configured Entity Framework Core with PostgreSQL (Npgsql), including migration management, repository pattern, and optimized query projections"
+                "Architected a full-stack job application automation platform using FastAPI (Python 3.10+), PostgreSQL 16, and SQLAlchemy 2.0 ORM, featuring seamless Alembic database migrations.",
+                "Developed an interactive, SPA-like frontend utilizing HTMX, Jinja2 templates, and TailwindCSS to provide instantaneous DOM updates without writing complex client-side JavaScript.",
+                "Engineered advanced web scraping pipelines using Playwright and BeautifulSoup4, successfully bypassing bot protection to extract over 350+ structured job postings from LinkedIn, SEEK, and Kalibrr.",
+                "Implemented a sophisticated deduplication algorithm utilizing URL normalization and external Job IDs to prevent data redundancy across multiple scraping sources.",
+                "Integrated Google Gemini 3.6 Flash LLM to parse raw job descriptions and automatically tailor fact-anchored resumes, utilizing strict Pydantic JSON schemas to guarantee zero hallucination.",
+                "Built a custom ATS-compliant PDF generation engine using WeasyPrint and Jinja2, enforcing strict typographic scaling, dynamic pixel-accurate overflow detection, and strict one-page A4 constraints.",
+                "Designed a Python-docx export module for editable resume formats alongside the immutable PDF generation pipeline.",
+                "Developed an intelligent matching algorithm that tokenizes candidate skills against job requirements, providing instant percentage-based fit scores and missing-skill gap analysis.",
+                "Implemented a Kanban-style job tracking dashboard with session-based JWT authentication, allowing users to intuitively move applications through New, Approved, Applied, and Skipped states.",
+                "Engineered a Human-in-the-Loop (HITL) approval UI, allowing users to manually override AI-generated bullet points and tailor specific keywords before finalizing documents.",
+                "Integrated a robust SMTP email dispatch engine capable of dynamically attaching tailored resumes and sending personalized outreach emails directly to recruiters."
             ]
         }
     ],
@@ -97,12 +118,26 @@
         {
             "company": "InfoTouch Corporation",
             "date": "Feb 2026 \u2013 June 2026",
-            "role": "Software Developer \u2013 Intern",
+            "role": "Software Developer Intern (SandHub API)",
             "location": "Makati, Metro Manila, Philippines",
             "bullets": [
-                "Traced full cross-stack API execution flows and refactored legacy controllers into high-performance Minimal APIs, ensuring zero service disruption and improving system reliability during migration.",
-                "Optimized database performance and reduced API response latency by implementing async/await patterns and tuning MySQL connection pooling (MinPoolSize=5, MaxPoolSize=100).",
-                "Authored comprehensive unit test suites and technical documentation for modernized routes while managing Git workflows in an agile team environment to drive continuous improvement."
+                "Collaborated within an agile software development team under the mentorship of a senior developer, actively participating in code reviews, daily stand-ups, and pull request merges via Git.",
+                "Spearheaded the modernization of legacy C# web controllers by refactoring them into high-performance Minimal APIs, significantly reducing overhead and improving code maintainability.",
+                "Optimized relational database interactions and reduced endpoint response latency by implementing modern async/await patterns and tuning MySQL connection pooling strategies.",
+                "Authored comprehensive xUnit testing suites and evaluated refactored API routes using Postman to guarantee 100% feature parity during the legacy migration phase.",
+                "Executed rigorous end-to-end Quality Assurance (QA) testing across both enterprise Web applications and Mobile platforms, identifying edge cases and validating session management workflows.",
+                "Traced cross-stack execution flows from the frontend UI down to the backend database layer to isolate and debug critical application errors.",
+                "Documented refactored API endpoints and architectural changes to facilitate seamless onboarding for future developers.",
+                "Designed a Clean Architecture enterprise REST API using ASP.NET Core 8.0, enforcing strict separation of concerns across Domain, Application, Infrastructure, and API boundaries.",
+                "Implemented the CQRS (Command Query Responsibility Segregation) pattern using MediatR to decouple read and write operations, enabling independent scaling and clear audit trails.",
+                "Built robust JWT authentication featuring refresh token rotation and custom role-based authorization middleware (IsAdmin, IsLead, IsActg) to secure all API endpoints.",
+                "Configured Entity Framework Core (EF Core) with PostgreSQL (Npgsql) for complex relational mapping, schema migrations, and optimized database queries.",
+                "Integrated Dapper as a high-performance micro-ORM for executing complex, multi-table raw SQL queries and optimizing critical read-heavy data access paths.",
+                "Engineered row-level pessimistic database locking mechanisms (SELECT FOR UPDATE) within Wallet Service transactions to absolutely prevent race conditions and balance corruption during concurrent payouts.",
+                "Architected a dual-mode authentication system supporting both mobile client logins (via phone numbers) and web portal logins (via credentials).",
+                "Developed a comprehensive User Action Audit Log service to trace and record every critical database mutation back to a specific authenticated actor identity.",
+                "Utilized Mapster for high-performance Object-to-Object (DTO) mapping, significantly reducing boilerplate code between Application and API layers.",
+                "Configured Serilog for structured, context-enriched logging, providing deep observability into application behavior and unhandled exceptions."
             ]
         },
         {
@@ -111,8 +146,12 @@
             "role": "Adviser I, Sales (MSS Sales Representative)",
             "location": "Mandaluyong, Metro Manila, Philippines",
             "bullets": [
-                "Provided cross-functional technical troubleshooting and network service resolution for telecommunications subscribers under strict SLA targets.",
-                "Diagnosed and resolved complex technical issues by simultaneously utilizing multiple internal CRM systems and technical documentation databases."
+                "Managed high-volume inbound technical support and customer service inquiries for a major telecommunications account under strict Service Level Agreement (SLA) deadlines.",
+                "Diagnosed and resolved complex mobile network and billing issues by simultaneously navigating multiple internal CRM systems and technical documentation databases.",
+                "De-escalated frustrated clients through empathetic communication, active listening, and efficient cross-functional problem solving.",
+                "Executed strategic upselling and sales advisory, recommending tailored mobile packages and network solutions to maximize customer retention and account value.",
+                "Maintained high quality-assurance (QA) scores by strictly adhering to compliance protocols, data privacy standards, and company call-handling frameworks.",
+                "Adapted rapidly to dynamic software system updates and shifting product policies within a fast-paced Business Process Outsourcing (BPO) environment."
             ]
         }
     ],

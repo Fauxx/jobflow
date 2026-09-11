@@ -1,0 +1,68 @@
+        async function generateCoverLetter() {
+            const btn = document.getElementById('btn-generate-cl');
+            const box = document.getElementById('cover-letter-box');
+            const jobId = document.getElementById('cl-job-id').value;
+            
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Drafting...</span>';
+            btn.disabled = true;
+            box.value = "AI is drafting your cover letter... This may take a few seconds.";
+            
+            try {
+                const res = await fetch(`/applications/${jobId}/generate-cover-letter`);
+                if (res.ok) {
+                    const data = await res.json();
+                    box.value = data.draft;
+                } else {
+                    box.value = "Error generating cover letter. The API might be rate limited.";
+                }
+            } catch (e) {
+                box.value = "Network error while generating draft.";
+            }
+            
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i><span>Draft Cover Letter</span>';
+            btn.disabled = false;
+        }
+        
+        function copyCoverLetter() {
+            const box = document.getElementById('cover-letter-box');
+            box.select();
+            document.execCommand('copy');
+            document.getElementById('cl-copy-text').innerText = 'Copied!';
+            setTimeout(() => { document.getElementById('cl-copy-text').innerText = 'Copy'; }, 2000);
+        }
+        
+        async function downloadCoverLetterPDF() {
+            const content = document.getElementById('cover-letter-box').value;
+            const jobId = document.getElementById('cl-job-id').value;
+            if(!content.trim()) { alert("Please draft a cover letter first!"); return; }
+            
+            const btn = document.getElementById('btn-dl-cl-pdf');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Generating...</span>';
+            btn.disabled = true;
+            
+            try {
+                const res = await fetch(`/applications/${jobId}/cover-letter/pdf`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ content })
+                });
+                if(res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Cover_Letter.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } else {
+                    alert("Failed to generate PDF.");
+                }
+            } catch(e) {
+                alert("Network error.");
+            }
+            
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }

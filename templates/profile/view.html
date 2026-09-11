@@ -3,289 +3,409 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Profile - Jobflow</title>
+    <title>Edit Master Profile — Jobflow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="/static/css/main.css" rel="stylesheet">
-    <script>
-        const profileData = {{ profile | tojson | safe }};
-    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        input:focus, textarea:focus { outline: none; border-color: #6366f1 !important; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+        .section-table { border-collapse: collapse; width: 100%; }
+        .section-table tbody tr { border-bottom: 1px solid rgba(51,65,85,0.5); }
+        .section-table tbody tr:last-child { border-bottom: none; }
+        
+        .label { display:block; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin-bottom:0.4rem; }
+        .inp { width:100%; background:#020617; border:1px solid #1e293b; border-radius:0.75rem; padding:0.65rem 1rem; font-size:0.875rem; color:#e2e8f0; transition: border-color 0.15s; }
+        .inp::placeholder { color:#334155; }
+        .btn-add { font-size:0.75rem; background:#6366f1; color:white; padding:0.35rem 0.85rem; border-radius:0.5rem; transition:background 0.15s; }
+        .btn-add:hover { background:#4f46e5; }
+        .cell-inp { width:100%; background:#020617; border:1px solid #1e293b; border-radius:0.5rem; padding:0.45rem 0.7rem; font-size:0.8rem; color:#e2e8f0; margin-bottom:0.35rem; }
+        .cell-inp::placeholder { color:#334155; }
+        .cell-ta { width:100%; background:#020617; border:1px solid #1e293b; border-radius:0.5rem; padding:0.45rem 0.7rem; font-size:0.8rem; color:#e2e8f0; resize:vertical; min-height:120px; }
+        .cell-ta::placeholder { color:#334155; }
+        
+        .bullet-inp { width:100%; background:#020617; border:1px solid #1e293b; border-radius:0.375rem; padding:0.35rem 0.5rem; font-size:0.8rem; color:#e2e8f0; resize:vertical; min-height:36px; }
+        .bullet-inp::placeholder { color:#334155; }
+    </style>
+    <script>const profileData = {{ profile | tojson | safe }};</script>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans">
-    <!-- Top Navigation Bar -->
-    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center">
-        <div class="flex items-center space-x-3">
-            <div class="bg-blue-600 p-2 rounded-lg text-white font-bold text-xl">
-                <i class="fa-solid fa-user"></i>
-            </div>
-            <h1 class="text-2xl font-black tracking-tight text-white">Professional Profile</h1>
-        </div>
+<body class="bg-slate-950 text-slate-200 min-h-screen flex flex-col">
+
+    <!-- Top Nav -->
+    <header class="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-8 py-4 flex justify-between items-center shadow-lg">
         <div class="flex items-center space-x-4">
-            <button onclick="importProfile()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-bold transition-colors">
-                <i class="fas fa-file-import mr-2"></i> Import from resume.json
-            </button>
-            <a href="/profile/preview" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg font-bold transition-colors">
+            <div class="bg-indigo-600 p-2.5 rounded-xl shadow-lg">
+                <i class="fa-solid fa-user-edit text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight">Edit Master Profile</h1>
+                <p class="text-xs text-slate-400 font-medium tracking-wide">AI KNOWLEDGE BASE</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="/profile/preview" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl font-medium transition-all text-sm">
                 <i class="fas fa-eye mr-2"></i> Preview
             </a>
-            <a href="/" class="text-gray-400 hover:text-white transition-colors">Back to Dashboard</a>
+            <a href="/" class="text-slate-400 hover:text-white transition-colors text-sm font-medium px-3">
+                <i class="fas fa-arrow-left mr-1"></i> Dashboard
+            </a>
         </div>
     </header>
 
-    <main class="flex-1 p-6 max-w-6xl mx-auto w-full pb-32">
-        <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 shadow-xl mb-6">
-            <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Identity</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label class="block text-sm text-gray-400">Name</label><input type="text" id="p_name" class="w-full bg-gray-700 rounded p-2 text-white" value="{{ profile.get('name', '') }}"></div>
-                <div><label class="block text-sm text-gray-400">Title</label><input type="text" id="p_title" class="w-full bg-gray-700 rounded p-2 text-white" value="{{ profile.get('title', '') }}"></div>
-                <div><label class="block text-sm text-gray-400">Headline</label><input type="text" id="p_headline" class="w-full bg-gray-700 rounded p-2 text-white" value="{{ profile.get('headline', '') }}"></div>
-                <div><label class="block text-sm text-gray-400">Phone</label><input type="text" id="p_phone" class="w-full bg-gray-700 rounded p-2 text-white" value="{{ profile.get('phone', '') }}"></div>
-                <div><label class="block text-sm text-gray-400">LinkedIn</label><input type="text" id="p_linkedin" class="w-full bg-gray-700 rounded p-2 text-white" value="{{ profile.get('linkedin_url', '') }}"></div>
-                <div><label class="block text-sm text-gray-400">GitHub</label><input type="text" id="p_github" class="w-full bg-gray-700 rounded p-2 text-white" value="{{ profile.get('github_url', '') }}"></div>
-                <div><label class="block text-sm text-gray-400">Portfolio</label><input type="text" id="p_portfolio" class="w-full bg-gray-700 rounded p-2 text-white" value="{{ profile.get('portfolio_url', '') }}"></div>
-                <div><label class="block text-sm text-gray-400">Location</label><input type="text" id="p_location" class="w-full bg-gray-700 rounded p-2 text-white" value="{{ profile.get('location', '') }}"></div>
-            </div>
-        </div>
+    <main class="flex-1 w-full max-w-[1800px] mx-auto p-6 md:p-10 space-y-8 pb-36">
 
-        <!-- Sections -->
-        <div class="space-y-6">
-            <!-- Experiences -->
-            <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 shadow-xl">
-                <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-                    <h3 class="text-lg font-bold text-blue-400"><i class="fas fa-briefcase mr-2"></i> Experience</h3>
-                    <button onclick="addExperience()" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-sm"><i class="fas fa-plus"></i> Add</button>
+        <!-- ── Core Identity ─────────────────────────────── -->
+        <section class="bg-slate-900 rounded-3xl border border-slate-800 p-8 shadow-xl">
+            <h2 class="text-xs font-bold uppercase tracking-widest text-indigo-400 border-b border-slate-800 pb-3 mb-6">
+                <i class="fas fa-id-card mr-2"></i> Core Identity
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div>
+                    <label class="label">Full Name</label>
+                    <input type="text" id="p_name" class="inp" value="{{ profile.name or '' }}" placeholder="Zet Donaue Samson">
                 </div>
-                <div id="experiences-container" class="space-y-4"></div>
+                <div>
+                    <label class="label">Professional Headline</label>
+                    <input type="text" id="p_headline" class="inp" value="{{ profile.headline or '' }}" placeholder="Cloud-Native Engineer & AI Developer">
+                </div>
+                <div>
+                    <label class="label">Location</label>
+                    <input type="text" id="p_location" class="inp" value="{{ profile.location or '' }}" placeholder="Manila, Philippines">
+                </div>
+                <div>
+                    <label class="label">Phone</label>
+                    <input type="text" id="p_phone" class="inp" value="{{ profile.phone or '' }}" placeholder="+63 9xx xxx xxxx">
+                </div>
+                <div>
+                    <label class="label">LinkedIn URL</label>
+                    <input type="text" id="p_linkedin" class="inp" value="{{ profile.linkedin_url or '' }}" placeholder="https://linkedin.com/in/...">
+                </div>
+                <div>
+                    <label class="label">GitHub URL</label>
+                    <input type="text" id="p_github" class="inp" value="{{ profile.github_url or '' }}" placeholder="https://github.com/...">
+                </div>
+                <div class="lg:col-span-3">
+                    <label class="label">Portfolio / Website</label>
+                    <input type="text" id="p_portfolio" class="inp" value="{{ profile.portfolio_url or '' }}" placeholder="https://yoursite.com">
+                </div>
+                <div class="lg:col-span-3">
+                    <label class="label">Professional Summary <span class="text-slate-600 font-normal normal-case">(shown on resume)</span></label>
+                    <textarea id="p_summary" class="inp min-h-[100px] resize-y" placeholder="Brief professional summary...">{{ profile.summary or '' }}</textarea>
+                </div>
             </div>
+        </section>
 
-            <!-- Projects -->
-            <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 shadow-xl">
-                <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-                    <h3 class="text-lg font-bold text-blue-400"><i class="fas fa-project-diagram mr-2"></i> Projects</h3>
-                    <button onclick="addProject()" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-sm"><i class="fas fa-plus"></i> Add</button>
-                </div>
-                <div id="projects-container" class="space-y-4"></div>
+        <!-- ── Skills ─────────────────────────────────────── -->
+        <section class="bg-slate-900 rounded-3xl border border-slate-800 p-8 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-5">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-indigo-400">
+                    <i class="fas fa-tools mr-2"></i> Skills
+                </h2>
+                <button onclick="addSkillRow()" class="btn-add"><i class="fas fa-plus mr-1"></i> Add Row</button>
             </div>
+            <div class="overflow-x-auto rounded-xl border border-slate-800">
+                <table class="section-table text-sm text-slate-300">
+                    <thead class="bg-slate-800/70 text-xs font-bold uppercase text-slate-500">
+                        <tr>
+                            <th class="px-5 py-3 text-left w-56">Category</th>
+                            <th class="px-5 py-3 text-left">Skills <span class="text-slate-600 font-normal normal-case">(comma or newline separated)</span></th>
+                            <th class="px-5 py-3 w-10"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="skills-tbody"></tbody>
+                </table>
+            </div>
+        </section>
 
-            <!-- Skills -->
-            <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 shadow-xl">
-                <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-                    <h3 class="text-lg font-bold text-blue-400"><i class="fas fa-code mr-2"></i> Skills</h3>
-                    <button onclick="addSkillCategory()" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-sm"><i class="fas fa-plus"></i> Add Category</button>
-                </div>
-                <div id="skills-container" class="space-y-4"></div>
+        <!-- ── Experience ─────────────────────────────────── -->
+        <section class="bg-slate-900 rounded-3xl border border-slate-800 p-8 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-5">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-indigo-400">
+                    <i class="fas fa-briefcase mr-2"></i> Experience
+                </h2>
+                <button onclick="addExpRow()" class="btn-add"><i class="fas fa-plus mr-1"></i> Add Row</button>
             </div>
+            <div class="overflow-x-auto rounded-xl border border-slate-800">
+                <table class="section-table text-sm text-slate-300">
+                    <thead class="bg-slate-800/70 text-xs font-bold uppercase text-slate-500">
+                        <tr>
+                            <th class="px-5 py-3 text-left w-56">Role Info</th>
+                            <th class="px-5 py-3 text-left">Bullets <span class="text-slate-600 font-normal normal-case">(individual items — these feed directly into the AI)</span></th>
+                            <th class="px-5 py-3 w-10"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="exp-tbody"></tbody>
+                </table>
+            </div>
+        </section>
 
-            <!-- Education -->
-            <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 shadow-xl">
-                <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-                    <h3 class="text-lg font-bold text-blue-400"><i class="fas fa-graduation-cap mr-2"></i> Education</h3>
-                    <button onclick="addEducation()" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-sm"><i class="fas fa-plus"></i> Add</button>
-                </div>
-                <div id="education-container" class="space-y-4"></div>
+        <!-- ── Projects ─────────────────────────────────── -->
+        <section class="bg-slate-900 rounded-3xl border border-slate-800 p-8 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-5">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-indigo-400">
+                    <i class="fas fa-code-branch mr-2"></i> Projects
+                </h2>
+                <button onclick="addProjRow()" class="btn-add"><i class="fas fa-plus mr-1"></i> Add Row</button>
             </div>
-        </div>
+            <div class="overflow-x-auto rounded-xl border border-slate-800">
+                <table class="section-table text-sm text-slate-300">
+                    <thead class="bg-slate-800/70 text-xs font-bold uppercase text-slate-500">
+                        <tr>
+                            <th class="px-5 py-3 text-left w-56">Project Info</th>
+                            <th class="px-5 py-3 text-left">Bullets <span class="text-slate-600 font-normal normal-case">(individual items — these feed directly into the AI)</span></th>
+                            <th class="px-5 py-3 w-10"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="proj-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ── Education ─────────────────────────────────── -->
+        <section class="bg-slate-900 rounded-3xl border border-slate-800 p-8 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-5">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-indigo-400">
+                    <i class="fas fa-graduation-cap mr-2"></i> Education
+                </h2>
+                <button onclick="addEduRow()" class="btn-add"><i class="fas fa-plus mr-1"></i> Add Row</button>
+            </div>
+            <div class="overflow-x-auto rounded-xl border border-slate-800">
+                <table class="section-table text-sm text-slate-300">
+                    <thead class="bg-slate-800/70 text-xs font-bold uppercase text-slate-500">
+                        <tr>
+                            <th class="px-5 py-3 text-left">Institution</th>
+                            <th class="px-5 py-3 text-left">Degree</th>
+                            <th class="px-5 py-3 text-left w-36">Date</th>
+                            <th class="px-5 py-3 text-left w-40">Location</th>
+                            <th class="px-5 py-3 w-10"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="edu-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+
     </main>
 
-    <!-- Floating Save Button -->
-    <div class="fixed bottom-6 right-6">
-        <button onclick="saveProfile()" class="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-full font-bold shadow-2xl text-lg flex items-center transition-transform hover:scale-105">
-            <i class="fas fa-save mr-2"></i> Save Profile
-        </button>
+    <!-- Sticky Footer -->
+    <div class="fixed bottom-0 left-0 w-full bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-8 py-4 shadow-xl z-50">
+        <div class="w-full max-w-[1800px] mx-auto flex justify-between items-center">
+            <span class="text-sm text-slate-500">
+                <i class="fas fa-database mr-2 text-indigo-500/70"></i>
+                Saved to relational database — bullets are stored as individual rows.
+            </span>
+            <button id="save-btn" onclick="saveProfile()" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2">
+                <i class="fas fa-save"></i> Save Master Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-6 right-6 z-[9999] hidden items-center gap-3 text-white px-5 py-3 rounded-xl shadow-2xl font-semibold text-sm">
+        <i id="toast-icon" class="fas fa-check-circle"></i> <span id="toast-msg"></span>
     </div>
 
     <script>
-        function createRemoveBtn(containerId) {
-            const btn = document.createElement('button');
-            btn.innerHTML = '<i class="fas fa-trash"></i>';
-            btn.className = 'absolute top-2 right-2 text-red-500 hover:text-red-400';
-            btn.onclick = () => document.getElementById(containerId).remove();
-            return btn;
+        let sc=0, ec=0, pc=0, dc=0;
+
+        function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+        function delBtn(id){
+            const b=document.createElement('button');
+            b.type='button';
+            b.innerHTML='<i class="fas fa-trash-alt"></i>';
+            b.className='text-slate-700 hover:text-red-400 transition-colors p-1';
+            b.onclick=()=>document.getElementById(id).remove();
+            return b;
         }
 
-        let expCounter = 0;
-        function addExperience(data = null) {
-            const id = 'exp_' + expCounter++;
-            const div = document.createElement('div');
-            div.id = id;
-            div.className = 'experience-card relative bg-gray-700 p-4 rounded-lg border border-gray-600';
-            
-            const bullets = data && data.bullets ? data.bullets.map(b => b.raw_text).join('\n') : '';
+        function autoResize(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+        document.addEventListener('input',e=>{ if(e.target.tagName==='TEXTAREA') autoResize(e.target); });
 
-            div.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 pr-8">
-                    <div><label class="text-xs text-gray-400">Company</label><input type="text" class="exp-company w-full bg-gray-800 rounded p-1 text-sm" value="${data?.company || ''}"></div>
-                    <div><label class="text-xs text-gray-400">Title</label><input type="text" class="exp-title w-full bg-gray-800 rounded p-1 text-sm" value="${data?.title || ''}"></div>
-                    <div><label class="text-xs text-gray-400">Location</label><input type="text" class="exp-location w-full bg-gray-800 rounded p-1 text-sm" value="${data?.location || ''}"></div>
-                    <div><label class="text-xs text-gray-400">Date Range</label><input type="text" class="exp-date w-full bg-gray-800 rounded p-1 text-sm" value="${data?.end_date || data?.start_date || ''}"></div>
-                </div>
-                <div>
-                    <label class="text-xs text-gray-400">Bullets (One per line)</label>
-                    <textarea class="exp-bullets w-full bg-gray-800 rounded p-2 text-sm h-32">${bullets}</textarea>
-                </div>
+        // Helper to add single bullet UI row
+        function createBulletRow(text = '') {
+            const wrap = document.createElement('div');
+            wrap.className = 'flex items-start gap-2 mb-2 bullet-item relative group';
+            wrap.innerHTML = `
+                <span class="text-indigo-500 mt-1.5 text-xs select-none">●</span>
+                <textarea class="bullet-inp bullet-text" placeholder="Bullet point text...">${esc(text)}</textarea>
+                <button type="button" class="text-slate-600 hover:text-red-400 p-1 opacity-50 group-hover:opacity-100 transition-opacity" onclick="this.parentElement.remove()" title="Remove bullet"><i class="fas fa-times"></i></button>
             `;
-            div.appendChild(createRemoveBtn(id));
-            document.getElementById('experiences-container').appendChild(div);
+            return wrap;
         }
 
-        let projCounter = 0;
-        function addProject(data = null) {
-            const id = 'proj_' + projCounter++;
-            const div = document.createElement('div');
-            div.id = id;
-            div.className = 'project-card relative bg-gray-700 p-4 rounded-lg border border-gray-600';
+        function addBulletTo(btn) {
+            const container = btn.previousElementSibling;
+            const row = createBulletRow('');
+            container.appendChild(row);
+            const ta = row.querySelector('textarea');
+            autoResize(ta);
+            ta.focus();
+        }
+
+        // ── Skills ──────────────────────────────────────────────────────────
+        function addSkillRow(d){
+            const id='sk'+sc++;
+            const tr=document.createElement('tr'); tr.id=id; tr.className='skill-row';
+            tr.innerHTML=`
+                <td class="px-5 py-3 align-top">
+                    <input class="cell-inp skill-cat font-semibold text-indigo-300" placeholder="e.g. Backend" value="${esc(d?.category)}">
+                </td>
+                <td class="px-5 py-3 align-top">
+                    <textarea class="cell-ta skill-items text-slate-300" placeholder="Python, FastAPI, Docker...">${esc(d?.name||d?.items||'')}</textarea>
+                </td>
+                <td class="px-5 py-3 align-middle text-center dc"></td>`;
+            tr.querySelector('.dc').appendChild(delBtn(id));
+            document.getElementById('skills-tbody').appendChild(tr);
+            tr.querySelectorAll('textarea').forEach(autoResize);
+        }
+
+        // ── Experience ──────────────────────────────────────────────────────
+        function addExpRow(d){
+            const id='ex'+ec++;
+            const tr=document.createElement('tr'); tr.id=id; tr.className='exp-row';
+            tr.innerHTML=`
+                <td class="px-5 py-3 align-top">
+                    <input class="cell-inp exp-company font-semibold text-indigo-300" placeholder="Company / Org" value="${esc(d?.company)}">
+                    <input class="cell-inp exp-title" placeholder="Job Title / Role" value="${esc(d?.title||d?.role)}">
+                    <input class="cell-inp exp-date text-slate-400" placeholder="Date Range" value="${esc(d?.date_range||d?.start_date)}">
+                    <input class="cell-inp exp-location text-slate-400" placeholder="Location" value="${esc(d?.location)}">
+                </td>
+                <td class="px-5 py-3 align-top">
+                    <div class="bullets-container"></div>
+                    <button type="button" class="text-xs text-indigo-400 hover:text-indigo-300 mt-1 font-medium flex items-center transition-colors" onclick="addBulletTo(this)"><i class="fas fa-plus mr-1.5"></i> Add Bullet</button>
+                </td>
+                <td class="px-5 py-3 align-middle text-center dc"></td>`;
+            tr.querySelector('.dc').appendChild(delBtn(id));
             
-            const bullets = data && data.bullets ? data.bullets.map(b => b.raw_text).join('\n') : '';
-            const checked = data?.is_highlight ? 'checked' : '';
+            const container = tr.querySelector('.bullets-container');
+            const bullets = d?.bullets || [];
+            if(bullets.length === 0) container.appendChild(createBulletRow(''));
+            else bullets.forEach(b => container.appendChild(createBulletRow(b.text || b.raw_text || b)));
 
-            div.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 pr-8">
-                    <div><label class="text-xs text-gray-400">Name</label><input type="text" class="proj-name w-full bg-gray-800 rounded p-1 text-sm" value="${data?.name || ''}"></div>
-                    <div><label class="text-xs text-gray-400">Role</label><input type="text" class="proj-role w-full bg-gray-800 rounded p-1 text-sm" value="${data?.role || ''}"></div>
-                    <div><label class="text-xs text-gray-400">Date Range</label><input type="text" class="proj-date w-full bg-gray-800 rounded p-1 text-sm" value="${data?.date_range || ''}"></div>
-                    <div class="flex items-end pb-1"><label class="flex items-center space-x-2 text-sm"><input type="checkbox" class="proj-highlight" ${checked}> <span>Highlight (Main Section)</span></label></div>
-                </div>
-                <div>
-                    <label class="text-xs text-gray-400">Bullets (One per line)</label>
-                    <textarea class="proj-bullets w-full bg-gray-800 rounded p-2 text-sm h-32">${bullets}</textarea>
-                </div>
-            `;
-            div.appendChild(createRemoveBtn(id));
-            document.getElementById('projects-container').appendChild(div);
+            document.getElementById('exp-tbody').appendChild(tr);
+            tr.querySelectorAll('textarea').forEach(autoResize);
         }
 
-        let skillCounter = 0;
-        function addSkillCategory(data = null) {
-            const id = 'skill_' + skillCounter++;
-            const div = document.createElement('div');
-            div.id = id;
-            div.className = 'skill-card relative bg-gray-700 p-4 rounded-lg border border-gray-600';
+        // ── Projects ────────────────────────────────────────────────────────
+        function addProjRow(d){
+            const id='pj'+pc++;
+            const tr=document.createElement('tr'); tr.id=id; tr.className='proj-row';
+            tr.innerHTML=`
+                <td class="px-5 py-3 align-top">
+                    <input class="cell-inp proj-name font-semibold text-indigo-300" placeholder="Project Name" value="${esc(d?.name||d?.title)}">
+                    <input class="cell-inp proj-role" placeholder="Your Role" value="${esc(d?.role)}">
+                    <input class="cell-inp proj-date text-slate-400" placeholder="Date Range" value="${esc(d?.date_range)}">
+                </td>
+                <td class="px-5 py-3 align-top">
+                    <div class="bullets-container"></div>
+                    <button type="button" class="text-xs text-indigo-400 hover:text-indigo-300 mt-1 font-medium flex items-center transition-colors" onclick="addBulletTo(this)"><i class="fas fa-plus mr-1.5"></i> Add Bullet</button>
+                </td>
+                <td class="px-5 py-3 align-middle text-center dc"></td>`;
+            tr.querySelector('.dc').appendChild(delBtn(id));
             
-            const namesStr = data && data.names ? data.names.join('\n') : '';
+            const container = tr.querySelector('.bullets-container');
+            const bullets = d?.bullets || [];
+            if(bullets.length === 0) container.appendChild(createBulletRow(''));
+            else bullets.forEach(b => container.appendChild(createBulletRow(b.text || b.raw_text || b)));
 
-            div.innerHTML = `
-                <div class="mb-3 pr-8">
-                    <label class="text-xs text-gray-400">Category</label>
-                    <input type="text" class="skill-category w-full bg-gray-800 rounded p-2 text-sm font-bold text-blue-300" value="${data?.category || ''}">
-                </div>
-                <div>
-                    <label class="text-xs text-gray-400">Skills (One per line)</label>
-                    <textarea class="skill-names w-full bg-gray-800 rounded p-2 text-sm h-32 leading-relaxed whitespace-pre-wrap">${namesStr}</textarea>
-                </div>
-            `;
-            div.appendChild(createRemoveBtn(id));
-            document.getElementById('skills-container').appendChild(div);
+            document.getElementById('proj-tbody').appendChild(tr);
+            tr.querySelectorAll('textarea').forEach(autoResize);
         }
 
-        let eduCounter = 0;
-        function addEducation(data = null) {
-            const id = 'edu_' + eduCounter++;
-            const div = document.createElement('div');
-            div.id = id;
-            div.className = 'edu-card relative bg-gray-700 p-4 rounded-lg border border-gray-600';
-            
-            div.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
-                    <div><label class="text-xs text-gray-400">Institution</label><input type="text" class="edu-inst w-full bg-gray-800 rounded p-1 text-sm" value="${data?.institution || ''}"></div>
-                    <div><label class="text-xs text-gray-400">Degree</label><input type="text" class="edu-degree w-full bg-gray-800 rounded p-1 text-sm" value="${data?.degree || ''}"></div>
-                    <div><label class="text-xs text-gray-400">Location</label><input type="text" class="edu-location w-full bg-gray-800 rounded p-1 text-sm" value="${data?.location || ''}"></div>
-                    <div><label class="text-xs text-gray-400">Date</label><input type="text" class="edu-date w-full bg-gray-800 rounded p-1 text-sm" value="${data?.date_str || ''}"></div>
-                </div>
-            `;
-            div.appendChild(createRemoveBtn(id));
-            document.getElementById('education-container').appendChild(div);
+        // ── Education ───────────────────────────────────────────────────────
+        function addEduRow(d){
+            const id='ed'+dc++;
+            const tr=document.createElement('tr'); tr.id=id; tr.className='edu-row';
+            tr.innerHTML=`
+                <td class="px-5 py-3 align-top"><input class="cell-inp edu-institution font-semibold text-indigo-300" placeholder="Institution" value="${esc(d?.institution)}"></td>
+                <td class="px-5 py-3 align-top"><input class="cell-inp edu-degree" placeholder="Degree / Course" value="${esc(d?.degree)}"></td>
+                <td class="px-5 py-3 align-top"><input class="cell-inp edu-date text-slate-400" placeholder="e.g. Aug 2026" value="${esc(d?.date_str)}"></td>
+                <td class="px-5 py-3 align-top"><input class="cell-inp edu-location text-slate-400" placeholder="Location" value="${esc(d?.location)}"></td>
+                <td class="px-5 py-3 align-middle text-center dc"></td>`;
+            tr.querySelector('.dc').appendChild(delBtn(id));
+            document.getElementById('edu-tbody').appendChild(tr);
         }
 
-        // Init Data
-        if (profileData) {
-            (profileData.experiences || []).forEach(e => addExperience(e));
-            (profileData.projects || []).forEach(p => addProject(p));
-            
-            // Group skills by category
-            if (profileData.skills) {
-                const grouped = {};
-                profileData.skills.forEach(s => {
-                    const cat = s.category || 'General';
-                    if (!grouped[cat]) grouped[cat] = [];
-                    grouped[cat].push(s.name);
-                });
-                Object.keys(grouped).forEach(cat => {
-                    addSkillCategory({ category: cat, names: grouped[cat] });
-                });
-            }
-            
-            (profileData.education || []).forEach(ed => addEducation(ed));
+        // ── Populate from DB ─────────────────────────────────────────────────
+        if(profileData){
+            (profileData.skills||[]).forEach(s=>addSkillRow(s));
+            (profileData.experiences||[]).forEach(e=>addExpRow(e));
+            (profileData.projects||[]).forEach(p=>addProjRow(p));
+            (profileData.education||[]).forEach(e=>addEduRow(e));
         }
 
-        async function importProfile() {
-            try {
-                const res = await fetch('/profile/import', { method: 'POST' });
-                if (res.ok) {
-                    window.location.reload();
-                } else {
-                    alert('Import failed');
-                }
-            } catch(e) {
-                alert('Error: ' + e);
-            }
-        }
+        // ── Save ────────────────────────────────────────────────────────────
+        async function saveProfile(){
+            const btn=document.getElementById('save-btn');
+            btn.disabled=true;
+            btn.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
 
-        async function saveProfile() {
-            const data = {
-                name: document.getElementById('p_name').value,
-                title: document.getElementById('p_title').value,
-                headline: document.getElementById('p_headline').value,
-                phone: document.getElementById('p_phone').value,
-                linkedin_url: document.getElementById('p_linkedin').value,
-                github_url: document.getElementById('p_github').value,
-                portfolio_url: document.getElementById('p_portfolio').value,
-                location: document.getElementById('p_location').value,
-                experiences: Array.from(document.querySelectorAll('.experience-card')).map(card => ({
-                    company: card.querySelector('.exp-company').value,
-                    title: card.querySelector('.exp-title').value,
-                    location: card.querySelector('.exp-location').value,
-                    end_date: card.querySelector('.exp-date').value,
-                    bullets: card.querySelector('.exp-bullets').value.split('\\n').filter(b => b.trim() !== '').map(b => ({raw_text: b.trim()}))
-                })),
-                projects: Array.from(document.querySelectorAll('.project-card')).map(card => ({
-                    name: card.querySelector('.proj-name').value,
-                    role: card.querySelector('.proj-role').value,
-                    date_range: card.querySelector('.proj-date').value,
-                    is_highlight: card.querySelector('.proj-highlight').checked,
-                    bullets: card.querySelector('.proj-bullets').value.split('\\n').filter(b => b.trim() !== '').map(b => ({raw_text: b.trim()}))
-                })),
-                skills: (function() {
-                    const arr = [];
-                    document.querySelectorAll('.skill-card').forEach(card => {
-                        const cat = card.querySelector('.skill-category').value.trim();
-                        const names = card.querySelector('.skill-names').value.split('\n')
-                            .map(s => s.trim())
-                            .filter(s => s !== '');
-                        names.forEach(n => arr.push({ category: cat, name: n }));
-                    });
-                    return arr;
-                })(),
-                education: Array.from(document.querySelectorAll('.edu-card')).map(card => ({
-                    institution: card.querySelector('.edu-inst').value,
-                    degree: card.querySelector('.edu-degree').value,
-                    location: card.querySelector('.edu-location').value,
-                    date_str: card.querySelector('.edu-date').value
-                }))
+            const payload={
+                name:          document.getElementById('p_name').value.trim(),
+                headline:      document.getElementById('p_headline').value.trim(),
+                summary:       document.getElementById('p_summary').value.trim(),
+                phone:         document.getElementById('p_phone').value.trim(),
+                location:      document.getElementById('p_location').value.trim(),
+                linkedin_url:  document.getElementById('p_linkedin').value.trim(),
+                github_url:    document.getElementById('p_github').value.trim(),
+                portfolio_url: document.getElementById('p_portfolio').value.trim(),
+
+                skills: [...document.querySelectorAll('.skill-row')].map(r=>({
+                    category: r.querySelector('.skill-cat').value.trim(),
+                    items:    r.querySelector('.skill-items').value.trim()
+                })).filter(s=>s.category||s.items),
+
+                experiences: [...document.querySelectorAll('.exp-row')].map(r=>({
+                    company:    r.querySelector('.exp-company').value.trim(),
+                    title:      r.querySelector('.exp-title').value.trim(),
+                    date_range: r.querySelector('.exp-date').value.trim(),
+                    location:   r.querySelector('.exp-location').value.trim(),
+                    bullets:    [...r.querySelectorAll('.bullet-text')].map(inp=>inp.value.trim()).filter(Boolean).map(t=>({text:t}))
+                })).filter(e=>e.company),
+
+                projects: [...document.querySelectorAll('.proj-row')].map(r=>({
+                    name:       r.querySelector('.proj-name').value.trim(),
+                    role:       r.querySelector('.proj-role').value.trim(),
+                    date_range: r.querySelector('.proj-date').value.trim(),
+                    bullets:    [...r.querySelectorAll('.bullet-text')].map(inp=>inp.value.trim()).filter(Boolean).map(t=>({text:t}))
+                })).filter(p=>p.name),
+
+                education: [...document.querySelectorAll('.edu-row')].map(r=>({
+                    institution: r.querySelector('.edu-institution').value.trim(),
+                    degree:      r.querySelector('.edu-degree').value.trim(),
+                    date_str:    r.querySelector('.edu-date').value.trim(),
+                    location:    r.querySelector('.edu-location').value.trim()
+                })).filter(e=>e.institution)
             };
 
-            try {
-                const res = await fetch('/profile/', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
+            try{
+                const res=await fetch('/profile/',{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify(payload)
                 });
-                if (res.ok) {
-                    alert('Profile saved successfully!');
-                } else {
-                    alert('Failed to save profile');
+                if(res.ok){
+                    toast('Profile saved successfully!',true);
+                    btn.innerHTML='<i class="fas fa-check mr-2"></i> Saved!';
+                    setTimeout(()=>{ btn.disabled=false; btn.innerHTML='<i class="fas fa-save mr-2"></i> Save Master Profile'; },2500);
+                }else{
+                    const err=await res.json().catch(()=>({detail:'Server error'}));
+                    toast('Save failed: '+(err.detail||res.status),false);
+                    btn.disabled=false; btn.innerHTML='<i class="fas fa-save mr-2"></i> Save Master Profile';
                 }
-            } catch(e) {
-                alert('Error saving profile: ' + e);
+            }catch(e){
+                toast('Network error: '+e.message,false);
+                btn.disabled=false; btn.innerHTML='<i class="fas fa-save mr-2"></i> Save Master Profile';
             }
+        }
+
+        function toast(msg,ok){
+            const el=document.getElementById('toast');
+            document.getElementById('toast-msg').textContent=msg;
+            document.getElementById('toast-icon').className='fas '+(ok?'fa-check-circle':'fa-times-circle');
+            el.className=`fixed top-6 right-6 z-[9999] flex items-center gap-3 ${ok?'bg-emerald-600':'bg-red-600'} text-white px-5 py-3 rounded-xl shadow-2xl font-semibold text-sm`;
+            setTimeout(()=>{ el.className=el.className.replace('flex','hidden'); },3500);
         }
     </script>
 </body>
