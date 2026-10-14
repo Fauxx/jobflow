@@ -103,7 +103,9 @@ async def get_job_details(job_id: int, db: Session = Depends(get_db)):
         "company": job.company,
         "location": job.location,
         "url": job.source_url,
-        "description": job.description or ""
+        "description": job.description or "",
+        "source": job.source,
+        "match_score": getattr(job, 'match_score', 0)
     }
 
 class JobDetailsUpdate(BaseModel):

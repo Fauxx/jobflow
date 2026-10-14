@@ -14,6 +14,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Playwright browsers
+ENV PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT=120000
 RUN playwright install --with-deps firefox
 
 COPY . .

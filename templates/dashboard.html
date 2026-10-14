@@ -464,6 +464,7 @@
                     body: JSON.stringify({ url })
                 });
                 if(res.ok) {
+                    const data = await res.json();
                     input.value = '';
                     btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i><span class="text-green-400">Queued! Add another</span>';
                     
@@ -471,6 +472,7 @@
                     const container = document.getElementById('triage-jobs-container');
                     if (container) {
                         const newCard = document.createElement('div');
+                        newCard.id = `pending-job-${data.job_id}`;
                         newCard.className = "bg-gray-800 border border-yellow-500/50 rounded-xl p-4 transition shadow flex flex-col animate-pulse";
                         newCard.innerHTML = `
                             <div class="flex justify-between items-start mb-2">
@@ -480,14 +482,13 @@
                             <h4 class="text-sm font-bold text-white leading-tight mb-1 truncate">${url}</h4>
                             <p class="text-xs text-yellow-400 font-semibold mb-3">Scraping in background...</p>
                             <div class="flex space-x-2 mt-auto">
-                                <button class="flex-1 bg-gray-700 text-gray-500 text-[11px] font-bold py-1.5 px-2 rounded-lg text-center cursor-not-allowed">
-                                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Please Refresh Soon
+                                <button class="flex-1 bg-gray-700 text-gray-400 text-[11px] font-bold py-1.5 px-2 rounded-lg text-center cursor-wait">
+                                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Extracting... (Auto-refresh)
                                 </button>
                             </div>
                         `;
                         container.prepend(newCard);
                         
-                        // If on mobile, maybe open the triage sidebar so they see it
                         document.getElementById('triage-sidebar').classList.remove('collapsed');
                     }
 
@@ -495,6 +496,61 @@
                         btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i><span>Extract & Import</span>';
                         btn.disabled = false;
                     }, 2000);
+
+                    // Poll for completion
+                    if (data.job_id) {
+                        const pollInterval = setInterval(async () => {
+                            try {
+                                const checkRes = await fetch(`/jobs/${data.job_id}/details`);
+                                if (checkRes.ok) {
+                                    const jobData = await checkRes.json();
+                                    // If title doesn't start with [Pending, it's done
+                                    if (!jobData.title.startsWith("[Pending")) {
+                                        clearInterval(pollInterval);
+                                        const pendingCard = document.getElementById(`pending-job-${data.job_id}`);
+                                        if (pendingCard) {
+                                            // Construct match score badge
+                                            let matchHtml = '';
+                                            if (jobData.match_score >= 50) {
+                                                matchHtml = `<span class="text-[10px] font-bold text-indigo-400">${jobData.match_score}% Match</span>`;
+                                            } else if (jobData.match_score >= 20) {
+                                                matchHtml = `<span class="text-[10px] font-bold text-gray-400">${jobData.match_score}% Match</span>`;
+                                            }
+
+                                            // Recreate the card to match a normal triage card
+                                            pendingCard.className = "bg-gray-800 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition shadow flex flex-col";
+                                            pendingCard.id = `triage-card-${data.job_id}`;
+                                            
+                                            // Escape strings for onclick
+                                            const escTitle = jobData.title.replace(/'/g, "\\'");
+                                            const escComp = jobData.company.replace(/'/g, "\\'");
+
+                                            pendingCard.innerHTML = `
+                                                <div class="flex justify-between items-start mb-2">
+                                                    <span class="text-[10px] font-bold px-1.5 py-0.5 bg-gray-900 rounded text-gray-400 uppercase tracking-wider">${jobData.source || 'WEB'}</span>
+                                                    ${matchHtml}
+                                                </div>
+                                                <h4 class="text-sm font-bold text-white leading-tight mb-1" title="${jobData.title}">${jobData.title}</h4>
+                                                <p class="text-xs text-blue-400 font-semibold mb-3">${jobData.company}</p>
+                                                
+                                                <div class="flex space-x-2 mt-auto">
+                                                    <button onclick="executeTailor(event, ${data.job_id}, '${escTitle}', '${escComp}', this.closest('.job-card-item'))" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold py-1.5 px-2 rounded-lg text-center transition">
+                                                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Tailor
+                                                    </button>
+                                                    <button onclick="editJobDescription(${data.job_id}, '${escTitle}')" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-[11px] font-bold py-1.5 px-3 rounded-lg transition" title="Edit Job Description">
+                                                        <i class="fa-solid fa-align-left"></i>
+                                                    </button>
+                                                    <button onclick="updateStatus(${data.job_id}, 'SKIPPED', true)" class="bg-gray-700 hover:bg-red-900/50 text-gray-400 hover:text-red-400 text-[11px] font-bold py-1.5 px-3 rounded-lg transition" title="Skip">
+                                                        <i class="fa-solid fa-xmark"></i>
+                                                    </button>
+                                                </div>
+                                            `;
+                                        }
+                                    }
+                                }
+                            } catch(e) {}
+                        }, 2000);
+                    }
                 }
                 else { 
                     const data = await res.json(); 

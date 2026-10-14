@@ -217,6 +217,21 @@
                         <div class="flex items-center space-x-4 mt-3">
                             <button type="button" onclick="addBullet(this.parentElement.previousElementSibling)" class="text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Blank Bullet</button>
                             <button type="button" onclick="openMasterProfileModal('experience', this.closest('.experience-block').querySelector('.exp-company').value, this.parentElement.previousElementSibling)" class="text-xs text-purple-400 hover:text-purple-300 font-bold"><i class="fa-solid fa-magnifying-glass mr-1"></i> Browse Original Bullets</button>
+                            <button type="button" onclick="toggleSectionAI(this.closest('.experience-block'))" class="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Regen</button>
+                        </div>
+                        <!-- AI instruction panel for this experience -->
+                        <div class="section-ai-box hidden mt-3 bg-gray-900 border border-amber-500/30 rounded-xl p-3 space-y-2">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-400"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Bullet Regeneration</p>
+                            <div class="flex gap-2">
+                                <input type="text" class="section-ai-input flex-1 bg-gray-800 border border-gray-700 text-xs text-white px-3 py-2 rounded-lg focus:outline-none focus:border-amber-500" placeholder="e.g. Focus on cloud architecture, make it more DevOps focused...">
+                                <button type="button" class="section-ai-btn bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs px-3 py-2 rounded-lg transition" onclick="adjustSectionWithAI(this.closest('.experience-block'), 'experience')"><i class="fa-solid fa-bolt"></i></button>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5">
+                                <button type="button" onclick="this.previousElementSibling.previousElementSibling.querySelector('.section-ai-input').value='Focus on cloud and infrastructure'; adjustSectionWithAI(this.closest('.experience-block'), 'experience')" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded-lg hover:bg-gray-700 transition">Cloud Focus</button>
+                                <button type="button" onclick="this.previousElementSibling.previousElementSibling.querySelector('.section-ai-input').value='Highlight leadership and ownership'; adjustSectionWithAI(this.closest('.experience-block'), 'experience')" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded-lg hover:bg-gray-700 transition">Leadership</button>
+                                <button type="button" onclick="this.previousElementSibling.previousElementSibling.querySelector('.section-ai-input').value='Pick the most technically impressive bullets'; adjustSectionWithAI(this.closest('.experience-block'), 'experience')" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded-lg hover:bg-gray-700 transition">Most Technical</button>
+                                <button type="button" onclick="this.previousElementSibling.previousElementSibling.querySelector('.section-ai-input').value='Match tightly to the job description'; adjustSectionWithAI(this.closest('.experience-block'), 'experience')" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded-lg hover:bg-gray-700 transition">Match JD</button>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
@@ -265,6 +280,21 @@
                         <div class="flex items-center space-x-4 mt-3">
                             <button type="button" onclick="addBullet(this.parentElement.previousElementSibling)" class="text-xs text-blue-400 hover:text-blue-300 font-bold"><i class="fa-solid fa-plus mr-1"></i> Add Blank Bullet</button>
                             <button type="button" onclick="openMasterProfileModal('project', this.closest('.project-block').querySelector('.proj-name').value, this.parentElement.previousElementSibling)" class="text-xs text-purple-400 hover:text-purple-300 font-bold"><i class="fa-solid fa-magnifying-glass mr-1"></i> Browse Original Bullets</button>
+                            <button type="button" onclick="toggleSectionAI(this.closest('.project-block'))" class="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Regen</button>
+                        </div>
+                        <!-- AI instruction panel for this project -->
+                        <div class="section-ai-box hidden mt-3 bg-gray-900 border border-amber-500/30 rounded-xl p-3 space-y-2">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-400"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Bullet Regeneration</p>
+                            <div class="flex gap-2">
+                                <input type="text" class="section-ai-input flex-1 bg-gray-800 border border-gray-700 text-xs text-white px-3 py-2 rounded-lg focus:outline-none focus:border-amber-500" placeholder="e.g. Emphasize Kubernetes and GitOps, focus on backend...">
+                                <button type="button" class="section-ai-btn bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs px-3 py-2 rounded-lg transition" onclick="adjustSectionWithAI(this.closest('.project-block'), 'project')"><i class="fa-solid fa-bolt"></i></button>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5">
+                                <button type="button" onclick="this.previousElementSibling.previousElementSibling.querySelector('.section-ai-input').value='Focus on DevOps and infrastructure bullets'; adjustSectionWithAI(this.closest('.project-block'), 'project')" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded-lg hover:bg-gray-700 transition">DevOps Focus</button>
+                                <button type="button" onclick="this.previousElementSibling.previousElementSibling.querySelector('.section-ai-input').value='Emphasize AI and data engineering'; adjustSectionWithAI(this.closest('.project-block'), 'project')" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded-lg hover:bg-gray-700 transition">AI/Data</button>
+                                <button type="button" onclick="this.previousElementSibling.previousElementSibling.querySelector('.section-ai-input').value='Pick the most technically impressive bullets'; adjustSectionWithAI(this.closest('.project-block'), 'project')" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded-lg hover:bg-gray-700 transition">Most Technical</button>
+                                <button type="button" onclick="this.previousElementSibling.previousElementSibling.querySelector('.section-ai-input').value='Match tightly to the job description'; adjustSectionWithAI(this.closest('.project-block'), 'project')" class="text-[9px] bg-gray-800 border border-gray-700 text-gray-300 px-2 py-1 rounded-lg hover:bg-gray-700 transition">Match JD</button>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
@@ -880,6 +910,91 @@
                 btn.innerHTML = originalIcon;
                 input.value = '';
                 container.style.opacity = '1';
+            }
+        }
+        // ── Per-section AI regen (experience / project cards) ──────────────
+        function toggleSectionAI(block) {
+            const box = block.querySelector('.section-ai-box');
+            box.classList.toggle('hidden');
+            if (!box.classList.contains('hidden')) {
+                box.querySelector('.section-ai-input').focus();
+            }
+        }
+
+        async function adjustSectionWithAI(block, sectionType) {
+            const box = block.querySelector('.section-ai-box');
+            const input = box.querySelector('.section-ai-input');
+            const btn = box.querySelector('.section-ai-btn');
+            const instruction = input.value.trim();
+            if (!instruction) { input.focus(); return; }
+
+            // Identify section name
+            const sectionName = sectionType === 'experience'
+                ? block.querySelector('.exp-company')?.value || ''
+                : block.querySelector('.proj-name')?.value || '';
+
+            // Gather current bullets
+            const currentBullets = Array.from(block.querySelectorAll('.bullet-text')).map(t => t.value.trim()).filter(Boolean);
+
+            // Loading state
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            input.disabled = true;
+            block.style.opacity = '0.7';
+
+            try {
+                const res = await fetch(`/resume/builder/{{ job.id }}/adjust-section`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        section_type: sectionType,
+                        section_name: sectionName,
+                        instruction: instruction,
+                        current_bullets: currentBullets
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    // Find the bullets container and replace its contents
+                    const bulletsContainer = block.querySelector('.space-y-3');
+
+                    // Keep the header label
+                    const label = bulletsContainer.querySelector('p');
+                    bulletsContainer.innerHTML = '';
+                    if (label) bulletsContainer.appendChild(label);
+
+                    // Inject new bullets
+                    data.bullets.forEach(bullet => {
+                        const isTop = bullet.highly_recommended;
+                        const row = document.createElement('div');
+                        row.className = `bullet-row flex items-start space-x-3 group ${isTop ? 'bg-purple-900/10 border border-purple-500/30 p-2 rounded-lg' : 'p-2 border border-transparent'} transition relative`;
+                        row.innerHTML = `
+                            <input type="checkbox" onchange="debounceSave()" ${isTop ? 'checked' : ''} class="bullet-checkbox mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 cursor-pointer">
+                            <div class="flex-1">
+                                <textarea rows="2" data-id="${bullet.id || ''}" class="bullet-text w-full bg-transparent border-none text-sm text-gray-300 focus:outline-none resize-none">${bullet.tailored_text || bullet.original_text || ''}</textarea>
+                                <button type="button" onclick="this.closest('.bullet-row').remove(); debounceSave();" class="absolute top-2 right-2 text-red-400 hover:text-red-300 text-xs opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                                ${bullet.reason ? `<p class="text-xs mt-1 flex items-center space-x-1 ${isTop ? 'text-purple-400' : 'text-gray-500 italic'}"><i class="fa-solid ${isTop ? 'fa-star' : 'fa-sparkles'}"></i><span>${isTop ? 'Top Match: ' : ''}${bullet.reason}</span></p>` : ''}
+                            </div>
+                        `;
+                        bulletsContainer.appendChild(row);
+                    });
+
+                    box.classList.add('hidden');
+                    input.value = '';
+                    debounceSave();
+                } else {
+                    const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+                    alert('AI regen failed: ' + err.detail);
+                }
+            } catch (e) {
+                alert('Network error: ' + e.message);
+            } finally {
+                btn.innerHTML = originalIcon;
+                btn.disabled = false;
+                input.disabled = false;
+                block.style.opacity = '1';
             }
         }
     </script>

@@ -21,28 +21,28 @@ class TailoredBullet(BaseModel):
     original_text: str = Field(default="", description="The exact original bullet from the candidate's profile")
     tailored_text: str = Field(default="", description="Must be IDENTICAL to the original_text. Do not rewrite or rephrase.")
     highly_recommended: bool = Field(description="True if this is an absolute perfect match for the job description")
-    reason: str = Field(description="Brief reason why this bullet was recommended or not")
+    reason: str = Field(description="Brief reason why this bullet was chosen")
 
 class TailoredExperience(BaseModel):
     company: str
     title: str
     location: str = ""
     date_range: str = ""
-    bullets: List[TailoredBullet] = Field(description="Select 6-8 relevant bullets verbatim from the master profile. Do not rewrite them.")
+    bullets: List[TailoredBullet] = Field(description="Select exactly 3-5 of the most relevant bullets verbatim from the master profile. Do not rewrite them.")
 
 class TailoredProject(BaseModel):
     name: str
     role: str = ""
     date_range: str = ""
     tech_stack: str = ""
-    bullets: List[TailoredBullet] = Field(description="Select 4-6 relevant bullets verbatim. Do not rewrite them.")
+    bullets: List[TailoredBullet] = Field(description="Select exactly 3-5 of the most relevant bullets verbatim from the master profile. Do not rewrite them.")
 
 class TailoredResume(BaseModel):
     """The full AI-suggested resume. Every field is a suggestion the user can edit."""
     summary: str = Field(description="AI-written professional summary tailored to this job")
     skills: List[str] = Field(description="A flat list of the most relevant skills for this job")
-    experiences: List[TailoredExperience] = Field(description="Selected experiences with verbatim bullets")
-    projects: List[TailoredProject] = Field(description="Selected projects with verbatim bullets")
+    experiences: List[TailoredExperience] = Field(description="ALL experiences from the candidate's profile, each with 3-5 verbatim bullets")
+    projects: List[TailoredProject] = Field(description="ALL projects from the candidate's profile, each with 3-5 verbatim bullets")
     certifications: List[str] = Field(default_factory=list)
     matched_skills: List[str] = Field(default_factory=list, description="Skills candidate has that JD wants")
     missing_skills: List[str] = Field(default_factory=list, description="Skills JD wants that candidate lacks")
@@ -63,12 +63,13 @@ class ResumeTailorService:
         prompt = f"""You are a Fact-Anchored Resume Curator Engine.
 
 STRICT RULES:
-1. You ONLY use information from the Candidate Knowledge Base below. 
-2. NEVER invent skills, tools, metrics, companies, dates, or achievements.
-3. DO NOT REWRITE OR REPHRASE BULLETS. Your job is to SELECT the most relevant existing bullets verbatim from the candidate's master profile.
-4. IMPORTANT: When selecting a bullet, you MUST provide its exact ID and its exact original text.
-5. If the JD requires a skill the candidate does NOT have, list it under "missing_skills" — do NOT pretend the candidate has it.
-6. Provide a brief explanation for why each verbatim bullet was selected and whether it is highly recommended based on the JD.
+1. FACTUAL ANCHORING: You ONLY use information from the Candidate Knowledge Base below. NEVER invent skills, tools, metrics, companies, dates, or achievements.
+2. VERBATIM SELECTION: DO NOT REWRITE OR REPHRASE BULLETS. Your job is to SELECT the most relevant existing bullets verbatim from the candidate's master profile.
+3. EXACT MAPPING: When selecting a bullet, you MUST provide its exact ID and its exact original text.
+4. INCLUDE ALL: You MUST include EVERY project and EVERY experience from the candidate's profile. Do NOT skip any.
+5. BULLETS PER SECTION: Select exactly 3 to 5 bullets per experience and per project. Pick the ones most relevant to the JD.
+6. HIGHLY RECOMMENDED: Set `highly_recommended` to `true` for the 2-3 bullets per section that are the absolute best match for this specific job.
+7. MISSING SKILLS GAP: If the JD requires a skill the candidate does NOT have, list it under "missing_skills" — do NOT pretend the candidate has it.
 
 ---
 
@@ -138,11 +139,11 @@ Generate a curated resume for THIS specific job. Return JSON with this exact str
   "missing_skills": ["Skills the JD requires that the candidate DOES NOT have"]
 }}
 
-- OVER-GENERATE BULLETS: For each experience, generate 6-8 strong, tailored bullets. For projects, generate 4-6. The user will manually filter them in the UI.
-- HIGHLY RECOMMENDED: Set `highly_recommended` to `true` for the 3 or 4 absolute best bullets in each section that perfectly match the JD.
-- Select all highly relevant experiences and projects.
+IMPORTANT REMINDERS:
+- Include ALL experiences and ALL projects — do not drop any.
+- Each section must have exactly 3 to 5 bullets, no more, no less.
+- Every tailored_text must be IDENTICAL to the original_text from the profile.
 - Output a single, flat list of the most relevant skills.
-- Every tailored_text must have a corresponding real original_text from the profile.
 """
 
         try:

@@ -14,3 +14,7 @@ lxml>=4.9.0
 python-dateutil>=2.8.2
 itsdangerous==2.2.0
 bcrypt==5.0.0
+python-docx>=0.8.11
+weasyprint>=61.0
+google-genai>=0.1.0
+browser-cookie3>=0.19.0

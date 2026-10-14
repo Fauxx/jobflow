@@ -1,3 +1,4 @@
+from sqlalchemy.orm import Session
 from fastapi import APIRouter, Request, Depends, HTTPException
 from src.services.ingestion import UniversalScraperService as IngestionService
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse

@@ -358,6 +358,80 @@ async def adjust_skills_with_ai(job_id: int, req: AdjustSkillsRequest, db: Sessi
 
     return {"skills": new_skills}
 
+class AdjustSectionRequest(BaseModel):
+    section_type: str  # "experience" or "project"
+    section_name: str  # company name or project name (to identify which one)
+    instruction: str
+    current_bullets: list  # list of bullet text strings currently in the card
+
+@router.post("/builder/{job_id}/adjust-section")
+async def adjust_section_with_ai(job_id: int, req: AdjustSectionRequest, db: Session = Depends(get_db)):
+    """Regenerate bullets for a specific experience or project card with a custom instruction."""
+    from src.services.job_analysis import call_gemini
+    from src.services.context_builder import build_context
+
+    user = get_current_user(db)
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    candidate_context = build_context(db, job, user.id)
+
+    prompt = f"""You are a Fact-Anchored Resume Curator Engine helping tailor specific resume bullets.
+
+STRICT RULES:
+1. Only select bullets from the CANDIDATE KNOWLEDGE BASE. Do NOT invent anything.
+2. Return bullets verbatim (exact text) — do NOT rephrase or rewrite.
+3. Return exactly 3 to 5 bullets.
+4. Follow the user's instruction carefully.
+
+## JOB BEING APPLIED TO
+Title: {job.title}
+Company: {job.company}
+
+## SECTION TO UPDATE
+Type: {req.section_type}
+Name: {req.section_name}
+
+## USER INSTRUCTION
+"{req.instruction}"
+
+## CURRENT BULLETS IN THIS CARD
+{json.dumps(req.current_bullets, indent=2)}
+
+## FULL CANDIDATE KNOWLEDGE BASE
+{candidate_context}
+
+## YOUR TASK
+Re-select 3-5 bullets for the "{req.section_name}" {req.section_type} section based on the user's instruction.
+Look through ALL bullets available for this section in the Knowledge Base and apply the user's instruction.
+
+Return ONLY a JSON array of bullet objects like this:
+[
+  {{
+    "id": "exact bullet UUID from the knowledge base",
+    "original_text": "exact verbatim text from knowledge base",
+    "tailored_text": "exact verbatim text (IDENTICAL to original_text)",
+    "highly_recommended": true,
+    "reason": "brief reason"
+  }}
+]
+
+Output ONLY the JSON array. No markdown, no explanations.
+"""
+
+    try:
+        resp = call_gemini(prompt).strip()
+        if resp.startswith("```"):
+            resp = resp.split("```json", 1)[-1].rsplit("```", 1)[0].strip() if "```json" in resp else resp.split("```", 1)[1].rsplit("```", 1)[0].strip()
+        bullets = json.loads(resp)
+        if not isinstance(bullets, list):
+            raise ValueError("Expected a JSON array")
+        return {"bullets": bullets}
+    except Exception as e:
+        print(f"[adjust-section] AI failed: {e}")
+        raise HTTPException(status_code=500, detail=f"AI adjustment failed: {str(e)}")
+
 @router.post("")
 async def save_resume(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
