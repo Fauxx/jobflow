@@ -170,6 +170,7 @@ function App() {
       <ResumeStudio
         jobId={activeTailorJobId}
         initialResume={tailoredResume}
+        job={selectedJob || jobs.find((j) => j.id === activeTailorJobId)}
         onBack={() => setActiveTailorJobId(null)}
       />
     );
@@ -223,6 +224,7 @@ function App() {
                 onSelectJob={handleSelectJob}
                 onTogglePriority={handleTogglePriority}
                 onStatusChange={handleStatusChange}
+                onOpenResumeStudio={handleOpenResumeStudio}
               />
             )}
 

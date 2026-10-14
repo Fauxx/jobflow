@@ -151,4 +151,56 @@ export const api = {
     if (!res.ok) throw new Error('Failed to adjust section with AI');
     return res.json();
   },
+
+  async adjustSummaryWithAI(jobId: number, instruction: string, currentSummary: string): Promise<{ summary: string }> {
+    const res = await fetch(`/resume/builder/${jobId}/adjust-summary`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ instruction, current_summary: currentSummary }),
+    });
+    if (!res.ok) throw new Error('Failed to adjust summary with AI');
+    return res.json();
+  },
+
+  async adjustSkillsWithAI(jobId: number, instruction: string, currentSkills: string[]): Promise<{ skills: string[] }> {
+    const res = await fetch(`/resume/builder/${jobId}/adjust-skills`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ instruction, current_skills: currentSkills }),
+    });
+    if (!res.ok) throw new Error('Failed to adjust skills with AI');
+    return res.json();
+  },
+
+  async adjustEntireResumeWithAI(jobId: number, instruction: string): Promise<{ status: string }> {
+    const res = await fetch(`/resume/builder/${jobId}/adjust`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ instruction }),
+    });
+    if (!res.ok) throw new Error('Failed to adjust resume with AI');
+    return res.json();
+  },
+
+  async saveTailoredResume(jobId: number, resumeData: any): Promise<{ status: string }> {
+    const res = await fetch(`/resume/builder/${jobId}/save`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(resumeData),
+    });
+    if (!res.ok) throw new Error('Failed to save tailored resume');
+    return res.json();
+  },
 };
