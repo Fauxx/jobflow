@@ -23,7 +23,42 @@ export const api = {
     return res.json();
   },
 
-  async importJob(url: string): Promise<Job> {
+  async toggleJobPriority(jobId: number): Promise<{ status: string; is_priority: boolean }> {
+    const res = await fetch(`/jobs/${jobId}/priority`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Failed to toggle priority');
+    return res.json();
+  },
+
+  async updateJob(jobId: number, data: Partial<Job>): Promise<{ status: string }> {
+    const res = await fetch(`/jobs/${jobId}`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to update job');
+    return res.json();
+  },
+
+  async createManualJob(payload: { title: string; company: string; location?: string; description: string; source_url?: string }): Promise<{ status: string; id: number }> {
+    const res = await fetch('/jobs', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to save manual job');
+    return res.json();
+  },
+
+  async importJob(url: string): Promise<{ status: string; job_id?: number }> {
     const res = await fetch('/scrape/import-url', {
       method: 'POST',
       headers: { 
@@ -34,6 +69,38 @@ export const api = {
     });
     if (!res.ok) throw new Error('Failed to import job');
     return res.json();
+  },
+
+  // Cover Letter
+  async generateCoverLetter(jobId: number): Promise<{ draft: string }> {
+    const res = await fetch(`/applications/${jobId}/generate-cover-letter`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Failed to generate cover letter');
+    return res.json();
+  },
+
+  async saveCoverLetter(jobId: number, content: string): Promise<{ status: string }> {
+    const res = await fetch(`/applications/${jobId}/cover-letter`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) throw new Error('Failed to save cover letter');
+    return res.json();
+  },
+
+  async downloadCoverLetterPdf(jobId: number, content: string): Promise<Blob> {
+    const res = await fetch(`/applications/${jobId}/cover-letter/pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) throw new Error('Failed to download cover letter PDF');
+    return res.blob();
   },
 
   // Profile

@@ -1,4 +1,4 @@
-export type JobStatus = 'NEW' | 'APPROVED' | 'APPLIED' | 'SKIPPED';
+export type JobStatus = 'SAVED' | 'APPLIED' | 'ARCHIVED' | 'NEW' | 'APPROVED' | 'SKIPPED';
 
 export interface Job {
   id: number;
@@ -8,6 +8,7 @@ export interface Job {
   url?: string;
   source_platform?: string;
   source_job_id?: string;
+  description?: string;
   raw_description?: string;
   cleaned_description?: string;
   salary_min?: number;
@@ -15,10 +16,20 @@ export interface Job {
   currency?: string;
   is_remote?: boolean;
   status: JobStatus;
+  is_priority?: boolean;
+  cover_letter?: string;
   fit_score?: number;
   fit_reason?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface ManualJobPayload {
+  title: string;
+  company: string;
+  location?: string;
+  description: string;
+  source_url?: string;
 }
 
 export interface ProfileBullet {

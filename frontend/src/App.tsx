@@ -1,74 +1,137 @@
 import { useState, useEffect } from 'react';
 import { Navbar } from './components/layout/Navbar';
-import { KanbanBoard } from './components/kanban/KanbanBoard';
-import { TriageDrawer } from './components/kanban/TriageDrawer';
+import { ProfileHeader } from './components/dashboard/ProfileHeader';
+import { ScraperBar } from './components/dashboard/ScraperBar';
+import { JobListView } from './components/dashboard/JobListView';
+import { JobDetailModal } from './components/dashboard/JobDetailModal';
 import { ResumeStudio } from './components/builder/ResumeStudio';
 import { MasterProfile } from './components/profile/MasterProfile';
 import { api } from './api/client';
-import type { Job, JobStatus, TailoredResume } from './types';
-import { X, RefreshCw } from 'lucide-react';
+import type { Job, JobStatus, TailoredResume, UserProfile, ManualJobPayload } from './types';
+import { RefreshCw } from 'lucide-react';
 
 function App() {
-  const [currentTab, setCurrentTab] = useState<'pipeline' | 'profile' | 'analytics'>('pipeline');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'profile'>('dashboard');
+  const [activeFilterTab, setActiveFilterTab] = useState<'all' | 'priority' | 'saved' | 'applied'>('all');
+  
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [isTriageOpen, setIsTriageOpen] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [scraping, setScraping] = useState(false);
+
+  // Job Detail & Action Modal state
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Resume Studio state
   const [activeTailorJobId, setActiveTailorJobId] = useState<number | null>(null);
   const [tailoredResume, setTailoredResume] = useState<TailoredResume | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
 
-  // Import Job Modal state
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [importUrl, setImportUrl] = useState('');
-  const [importing, setImporting] = useState(false);
-
-  // Load jobs from FastAPI backend
-  const loadJobs = async () => {
+  // Load jobs and profile data
+  const loadData = async () => {
     try {
       setLoading(true);
-      const data = await api.getJobs();
-      setJobs(data);
-      if (data.length > 0 && !selectedJob) {
-        setSelectedJob(data[0]);
-      }
+      const [jobsData, profileData] = await Promise.all([
+        api.getJobs(),
+        api.getProfile().catch(() => null),
+      ]);
+      setJobs(jobsData);
+      setProfile(profileData);
     } catch (err) {
-      console.error('Failed to load jobs', err);
+      console.error('Failed to load dashboard data', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadJobs();
+    loadData();
   }, []);
 
-  const handleStatusChange = async (jobId: number, status: JobStatus) => {
+  // Priority toggle handler
+  const handleTogglePriority = async (jobId: number) => {
+    // Optimistic toggle
+    setJobs((prev) =>
+      prev.map((j) => (j.id === jobId ? { ...j, is_priority: !j.is_priority } : j))
+    );
+    if (selectedJob?.id === jobId) {
+      setSelectedJob((prev) => (prev ? { ...prev, is_priority: !prev.is_priority } : null));
+    }
     try {
-      // Optimistic update
+      const res = await api.toggleJobPriority(jobId);
+      // Align with server state
       setJobs((prev) =>
-        prev.map((j) => (j.id === jobId ? { ...j, status } : j))
+        prev.map((j) => (j.id === jobId ? { ...j, is_priority: res.is_priority } : j))
       );
-      if (selectedJob?.id === jobId) {
-        setSelectedJob((prev) => (prev ? { ...prev, status } : null));
-      }
-      await api.updateJobStatus(jobId, status);
     } catch (err) {
-      console.error(err);
-      loadJobs();
+      console.error('Failed to toggle priority', err);
+      // Revert on failure
+      setJobs((prev) =>
+        prev.map((j) => (j.id === jobId ? { ...j, is_priority: !j.is_priority } : j))
+      );
     }
   };
 
-  const handleStartTailoring = async (jobId: number) => {
+  // Status change handler
+  const handleStatusChange = async (jobId: number, status: JobStatus) => {
+    setJobs((prev) =>
+      prev.map((j) => (j.id === jobId ? { ...j, status } : j))
+    );
+    if (selectedJob?.id === jobId) {
+      setSelectedJob((prev) => (prev ? { ...prev, status } : null));
+    }
+    try {
+      await api.updateJobStatus(jobId, status);
+    } catch (err) {
+      console.error('Failed to update status', err);
+      loadData();
+    }
+  };
+
+  // Scrape URL handler
+  const handleScrapeUrl = async (url: string) => {
+    try {
+      setScraping(true);
+      await api.importJob(url);
+      // Wait a moment for background task to initialize, then reload
+      setTimeout(async () => {
+        const updatedJobs = await api.getJobs();
+        setJobs(updatedJobs);
+        setScraping(false);
+      }, 1500);
+    } catch (err) {
+      console.error('Failed to import job', err);
+      alert('Failed to scrape job. You can use "Paste Raw JD" to enter it manually.');
+      setScraping(false);
+    }
+  };
+
+  // Manual job submit handler
+  const handleManualSubmit = async (payload: ManualJobPayload) => {
+    try {
+      setScraping(true);
+      await api.createManualJob(payload);
+      const updatedJobs = await api.getJobs();
+      setJobs(updatedJobs);
+    } catch (err) {
+      console.error('Failed to create manual job', err);
+      throw err;
+    } finally {
+      setScraping(false);
+    }
+  };
+
+  // Open Resume Studio from Modal
+  const handleOpenResumeStudio = async (jobId: number) => {
+    setIsDetailModalOpen(false);
     setActiveTailorJobId(jobId);
     setLoadingDraft(true);
     try {
       const draft = await api.getTailoredDraft(jobId);
       setTailoredResume(draft);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load draft for Resume Studio', err);
       alert('Failed to load tailored draft for this job.');
       setActiveTailorJobId(null);
     } finally {
@@ -76,22 +139,18 @@ function App() {
     }
   };
 
-  const handleImportSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!importUrl.trim()) return;
-    setImporting(true);
-    try {
-      const newJob = await api.importJob(importUrl);
-      setJobs((prev) => [newJob, ...prev]);
-      setSelectedJob(newJob);
-      setIsImportModalOpen(false);
-      setImportUrl('');
-    } catch (err) {
-      console.error(err);
-      alert('Failed to import job from URL.');
-    } finally {
-      setImporting(false);
+  // Update single job in state (e.g. after JD edit or cover letter save)
+  const handleUpdateJob = (updatedJob: Job) => {
+    setJobs((prev) => prev.map((j) => (j.id === updatedJob.id ? updatedJob : j)));
+    if (selectedJob?.id === updatedJob.id) {
+      setSelectedJob(updatedJob);
     }
+  };
+
+  // Open modal for a selected job
+  const handleSelectJob = (job: Job) => {
+    setSelectedJob(job);
+    setIsDetailModalOpen(true);
   };
 
   // If in Resume Studio view
@@ -100,7 +159,7 @@ function App() {
       return (
         <div className="w-screen h-screen flex flex-col items-center justify-center bg-[#0B0F19] text-white space-y-4">
           <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
-          <p className="text-sm font-bold text-gray-300">
+          <p className="text-sm font-bold text-neutral-300">
             Generating fact-anchored resume draft with AI...
           </p>
         </div>
@@ -116,100 +175,70 @@ function App() {
     );
   }
 
+  // Live count computations
+  const totalJobs = jobs.length;
+  const priorityJobs = jobs.filter((j) => j.is_priority).length;
+  const savedJobs = jobs.filter(
+    (j) => j.status === 'SAVED' || j.status === 'NEW' || j.status === 'APPROVED'
+  ).length;
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0B0F19]">
+      {/* Top Navbar */}
       <Navbar
         currentTab={currentTab}
         onTabChange={setCurrentTab}
-        onToggleTriage={() => setIsTriageOpen((prev) => !prev)}
-        onImportClick={() => setIsImportModalOpen(true)}
       />
 
-      <main className="flex-1 flex overflow-hidden relative">
-        {currentTab === 'pipeline' && (
+      <main className="flex-1 flex flex-col overflow-hidden relative">
+        {currentTab === 'dashboard' && (
           <>
+            {/* 1. Profile Overview Header */}
+            <ProfileHeader
+              profile={profile}
+              totalJobs={totalJobs}
+              priorityJobs={priorityJobs}
+              savedJobs={savedJobs}
+              activeTab={activeFilterTab}
+              onTabSelect={setActiveFilterTab}
+            />
+
+            {/* 2. Sticky Scraper & Manual Ingestion Bar */}
+            <ScraperBar
+              onScrapeUrl={handleScrapeUrl}
+              onManualSubmit={handleManualSubmit}
+              loading={scraping}
+            />
+
+            {/* 3. High-Density Interactive Job List */}
             {loading ? (
               <div className="flex-1 flex items-center justify-center">
                 <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
               </div>
             ) : (
-              <KanbanBoard
+              <JobListView
                 jobs={jobs}
-                onSelectJob={(j) => {
-                  setSelectedJob(j);
-                  setIsTriageOpen(true);
-                }}
+                activeTab={activeFilterTab}
+                onTabSelect={setActiveFilterTab}
+                onSelectJob={handleSelectJob}
+                onTogglePriority={handleTogglePriority}
                 onStatusChange={handleStatusChange}
-                onTailor={handleStartTailoring}
               />
             )}
 
-            <TriageDrawer
+            {/* 4. Comprehensive Job Action & Detail Modal */}
+            <JobDetailModal
               job={selectedJob}
-              isOpen={isTriageOpen}
-              onClose={() => setIsTriageOpen(false)}
-              onStatusChange={handleStatusChange}
-              onTailor={handleStartTailoring}
+              isOpen={isDetailModalOpen}
+              onClose={() => setIsDetailModalOpen(false)}
+              onUpdateJob={handleUpdateJob}
+              onOpenResumeStudio={handleOpenResumeStudio}
             />
           </>
         )}
 
         {currentTab === 'profile' && <MasterProfile />}
-
-        {currentTab === 'analytics' && (
-          <div className="flex-1 p-8 text-center text-gray-400 bg-[#0B0F19]">
-            <h2 className="text-xl font-bold text-white mb-2">Analytics & Velocity</h2>
-            <p className="text-sm">
-              Live funnel conversion metrics, platform breakdown, and application status trends.
-            </p>
-          </div>
-        )}
       </main>
-
-      {/* Import Job Modal */}
-      {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-            <button
-              onClick={() => setIsImportModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-lg font-bold text-white mb-2">Import Job from URL</h3>
-            <p className="text-xs text-gray-400 mb-4">
-              Paste a URL from LinkedIn, Kalibrr, or SEEK to automatically scrape and analyze it.
-            </p>
-            <form onSubmit={handleImportSubmit} className="space-y-4">
-              <input
-                type="url"
-                required
-                value={importUrl}
-                onChange={(e) => setImportUrl(e.target.value)}
-                placeholder="https://www.linkedin.com/jobs/view/..."
-                className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
-              />
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsImportModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-white rounded-xl transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={importing}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5"
-                >
-                  {importing && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                  {importing ? 'Scraping...' : 'Import'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

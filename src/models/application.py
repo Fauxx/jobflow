@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .base import Base
@@ -9,6 +9,7 @@ class Application(Base):
     user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
     job_id = Column(Integer, ForeignKey('jobs.id', ondelete="CASCADE"), nullable=False)
     status = Column(String, default="NEW", nullable=False)
+    is_priority = Column(Boolean, default=False, nullable=False)
     email_subject = Column(String, nullable=True)
     email_body = Column(String, nullable=True)
     cover_letter = Column(String, nullable=True)

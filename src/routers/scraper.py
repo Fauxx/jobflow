@@ -27,10 +27,17 @@ def background_scrape_task(url: str):
 def import_job_from_url(req: ImportRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     try:
         url_str = str(req.url)
-        # Fast check if it already exists before queuing
-        from src.models.job import Job
+        from src.models.application import Application
+        from src.core.dependencies import get_current_user
+        user = get_current_user(db)
+
         existing_job = db.query(Job).filter(Job.source_url == url_str).first()
         if existing_job:
+            app = db.query(Application).filter(Application.job_id == existing_job.id, Application.user_id == user.id).first()
+            if not app:
+                app = Application(job_id=existing_job.id, user_id=user.id, status="SAVED")
+                db.add(app)
+                db.commit()
             return {"status": "success", "message": "Already imported", "job_id": existing_job.id}
         
         # Add a placeholder "Pending" job instantly to the DB so the UI sees it
@@ -47,6 +54,11 @@ def import_job_from_url(req: ImportRequest, background_tasks: BackgroundTasks, d
         db.add(pending_job)
         db.commit()
         db.refresh(pending_job)
+
+        # Create application with SAVED status
+        app = Application(job_id=pending_job.id, user_id=user.id, status="SAVED")
+        db.add(app)
+        db.commit()
 
         # Queue the actual scrape task
         background_tasks.add_task(background_scrape_task, url_str)

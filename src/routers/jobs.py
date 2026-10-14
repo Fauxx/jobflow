@@ -65,12 +65,12 @@ async def save_job(job_data: JobSaveRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(job)
     
-    # Also create an application record to track status
+    # Also create an application record to track status (defaults to SAVED)
     user = get_current_user(db)
     app = Application(
         job_id=job.id,
         user_id=user.id,
-        status="APPROVED"
+        status="SAVED"
     )
     db.add(app)
     db.commit()
@@ -79,7 +79,7 @@ async def save_job(job_data: JobSaveRequest, db: Session = Depends(get_db)):
 
 @router.get("")
 async def list_jobs(status: Optional[str] = None, db: Session = Depends(get_db)):
-    """Return JSON list of all jobs with status and fit scores for the React UI."""
+    """Return JSON list of all jobs with status, priority, and fit scores for the UI."""
     from src.models.profile import UserProfile
     user = get_current_user(db)
     profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
@@ -102,12 +102,18 @@ async def list_jobs(status: Optional[str] = None, db: Session = Depends(get_db))
 
     jobs_out = []
     for job, app in results:
-        job_status = app.status if app else "NEW"
-        if status and job_status != status:
-            continue
+        job_status = app.status if app else "SAVED"
+        is_prio = bool(app.is_priority) if app else False
+
+        if status:
+            if status == "PRIORITY" and not is_prio:
+                continue
+            elif status != "PRIORITY" and job_status != status:
+                continue
             
         # Match score calculation
         match_score = 0
+        matches = 0
         if user_skills:
             text_to_search = f"{job.title} {job.description}".lower() if job.description else (job.title or "").lower()
             matches = sum(1 for skill in user_skills if skill in text_to_search)
@@ -125,12 +131,69 @@ async def list_jobs(status: Optional[str] = None, db: Session = Depends(get_db))
             "raw_description": job.description,
             "cleaned_description": job.description,
             "status": job_status,
+            "is_priority": is_prio,
+            "cover_letter": (app.cover_letter or "") if app else "",
             "fit_score": match_score,
             "fit_reason": f"Matches {matches} core skills from your profile" if match_score > 0 else None,
             "created_at": str(job.date_posted) if job.date_posted else None
         })
 
     return jobs_out
+
+@router.post("/{job_id}/priority")
+async def toggle_priority(job_id: int, db: Session = Depends(get_db)):
+    """Toggle star / priority status for a job."""
+    user = get_current_user(db)
+    app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
+    if not app:
+        app = Application(job_id=job_id, user_id=user.id, status="SAVED", is_priority=True)
+        db.add(app)
+    else:
+        app.is_priority = not bool(app.is_priority)
+        app.updated_at = datetime.datetime.now()
+    db.commit()
+    return {"status": "success", "job_id": job_id, "is_priority": app.is_priority}
+
+class JobUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    company: Optional[str] = None
+    location: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    is_priority: Optional[bool] = None
+
+@router.put("/{job_id}")
+async def update_job(job_id: int, payload: JobUpdateRequest, db: Session = Depends(get_db)):
+    """Update job description or attributes and application status/priority."""
+    user = get_current_user(db)
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if payload.title is not None:
+        job.title = payload.title
+    if payload.company is not None:
+        job.company = payload.company
+    if payload.location is not None:
+        job.location = payload.location
+    if payload.description is not None:
+        job.description = payload.description
+
+    app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
+    if not app:
+        app = Application(job_id=job_id, user_id=user.id, status=payload.status or "SAVED")
+        if payload.is_priority is not None:
+            app.is_priority = payload.is_priority
+        db.add(app)
+    else:
+        if payload.status is not None:
+            app.status = payload.status
+        if payload.is_priority is not None:
+            app.is_priority = payload.is_priority
+        app.updated_at = datetime.datetime.now()
+
+    db.commit()
+    return {"status": "success", "job_id": job_id}
 
 @router.post("/{job_id}/status")
 async def update_status(job_id: int, request: Request, status: Optional[str] = Form(None), db: Session = Depends(get_db)):
