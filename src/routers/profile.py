@@ -20,11 +20,16 @@ except ImportError:
 router = APIRouter(prefix="/profile", tags=["profile"])
 templates = Jinja2Templates(directory="templates")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("")
+@router.get("/")
 async def view_profile(request: Request, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     profile_data = get_full_profile(db, current_user.id)
+    accept = request.headers.get("accept", "")
+    if "application/json" in accept or request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return profile_data
     return templates.TemplateResponse(request=request, name="profile/view.html", context={"request": request, "profile": profile_data})
 
+@router.post("")
 @router.post("/")
 async def update_profile(request: Request, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     try:

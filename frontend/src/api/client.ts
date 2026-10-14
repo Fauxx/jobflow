@@ -3,7 +3,9 @@ import type { Job, JobStatus, UserProfile } from '../types';
 export const api = {
   // Jobs
   async getJobs(): Promise<Job[]> {
-    const res = await fetch('/jobs');
+    const res = await fetch('/jobs', {
+      headers: { 'Accept': 'application/json' }
+    });
     if (!res.ok) throw new Error('Failed to fetch jobs');
     return res.json();
   },
@@ -11,7 +13,10 @@ export const api = {
   async updateJobStatus(jobId: number, status: JobStatus): Promise<{ status: string }> {
     const res = await fetch(`/jobs/${jobId}/status`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({ status }),
     });
     if (!res.ok) throw new Error('Failed to update job status');
@@ -19,9 +24,12 @@ export const api = {
   },
 
   async importJob(url: string): Promise<Job> {
-    const res = await fetch('/scraper/import-url', {
+    const res = await fetch('/scrape/import-url', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({ url }),
     });
     if (!res.ok) throw new Error('Failed to import job');
@@ -30,7 +38,9 @@ export const api = {
 
   // Profile
   async getProfile(): Promise<UserProfile> {
-    const res = await fetch('/profile');
+    const res = await fetch('/profile', {
+      headers: { 'Accept': 'application/json' }
+    });
     if (!res.ok) throw new Error('Failed to fetch profile');
     return res.json();
   },
@@ -38,7 +48,10 @@ export const api = {
   async updateProfile(profileData: Partial<UserProfile>): Promise<{ status: string }> {
     const res = await fetch('/profile', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(profileData),
     });
     if (!res.ok) throw new Error('Failed to save profile');
@@ -47,7 +60,9 @@ export const api = {
 
   // Resume Tailoring
   async getTailoredDraft(jobId: number) {
-    const res = await fetch(`/resumes/builder/${jobId}/draft`);
+    const res = await fetch(`/resume/builder/${jobId}/draft`, {
+      headers: { 'Accept': 'application/json' }
+    });
     if (!res.ok) throw new Error('Failed to fetch draft');
     return res.json();
   },
@@ -58,9 +73,12 @@ export const api = {
     instruction: string;
     current_bullets: any[];
   }) {
-    const res = await fetch(`/resumes/builder/${jobId}/adjust-section`, {
+    const res = await fetch(`/resume/builder/${jobId}/adjust-section`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error('Failed to adjust section with AI');

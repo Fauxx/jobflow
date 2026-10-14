@@ -206,13 +206,14 @@ async def trigger_tailor_async(job_id: int, background_tasks: BackgroundTasks, d
     background_tasks.add_task(background_tailor_task, job_id, user.id)
     return {"status": "queued"}
 
+@router.get("/builder/{job_id}/draft")
 @router.get("/builder/{job_id}", response_class=HTMLResponse)
 async def builder(request: Request, job_id: int, db: Session = Depends(get_db)):
     user = get_current_user(db)
     job = db.query(Job).filter(Job.id == job_id).first()
     
     if not job:
-        return HTMLResponse("Job not found", status_code=404)
+        raise HTTPException(status_code=404, detail="Job not found")
         
     # Auto-Approve Job if not already applied/approved
     app = db.query(Application).filter(Application.job_id == job.id, Application.user_id == user.id).first()
@@ -238,6 +239,10 @@ async def builder(request: Request, job_id: int, db: Session = Depends(get_db)):
         app.ai_draft_json = json.dumps(tailored_data)
         db.commit()
     
+    accept = request.headers.get("accept", "")
+    if "application/json" in accept or request.url.path.endswith("/draft"):
+        return tailored_data
+
     master_profile = get_legacy_resume_dict(db, user.id)
 
     return templates.TemplateResponse(request=request, name="builder.html", context={

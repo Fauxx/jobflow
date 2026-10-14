@@ -45,9 +45,11 @@ async def auth_middleware(request: Request, call_next):
 app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(scraper.router)
+app.include_router(scraper.router, prefix="/scraper")
 app.include_router(profile.router)
 app.include_router(jobs.router)
 app.include_router(resumes.router)
+app.include_router(resumes.router, prefix="/resumes")
 app.include_router(applications.router)
 app.include_router(analytics.router)
 

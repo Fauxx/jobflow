@@ -23,6 +23,7 @@ def background_scrape_task(url: str):
         db.close()
 
 @router.post("")
+@router.post("/import-url")
 def import_job_from_url(req: ImportRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     try:
         url_str = str(req.url)
