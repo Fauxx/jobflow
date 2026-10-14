@@ -1,4 +1,4 @@
-.PHONY: all build up down stop clean logs wipe
+.PHONY: all build up down stop clean logs wipe restart frontend-dev frontend-build frontend-install
 
 # Default target
 all: build up
@@ -39,6 +39,16 @@ clean:
 # Completely restart everything and build
 # SAFE: This does NOT delete your database data.
 restart: down build up
+
+# ── Frontend (React 19 + TypeScript + Vite) ──────────────────────────────────
+frontend-install:
+	cd frontend && npm install
+
+frontend-dev:
+	cd frontend && npm run dev
+
+frontend-build:
+	cd frontend && npm run build
 
 # ⚠️ DANGER: Wipes EVERYTHING including the database volume!
 # WARNING: THIS WILL MAKE YOUR DATA ON DATABASE DISAPPEAR!
