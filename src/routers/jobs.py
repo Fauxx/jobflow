@@ -77,9 +77,76 @@ async def save_job(job_data: JobSaveRequest, db: Session = Depends(get_db)):
     
     return {"status": "success", "id": job.id}
 
-@router.post("/{job_id}/status")
-async def update_status(job_id: int, request: Request, status: str = Form(...), db: Session = Depends(get_db)):
+@router.get("")
+async def list_jobs(status: Optional[str] = None, db: Session = Depends(get_db)):
+    """Return JSON list of all jobs with status and fit scores for the React UI."""
+    from src.models.profile import UserProfile
     user = get_current_user(db)
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+    
+    # Skills for match scoring
+    user_skills = set()
+    if profile and profile.skills:
+        for s in profile.skills:
+            if s.items:
+                parts = [p.strip().lower() for p in s.items.split(',')]
+                for p in parts:
+                    if p:
+                        user_skills.add(p)
+    user_skills = list(user_skills)
+
+    # Fetch jobs with their application state for this user
+    results = db.query(Job, Application).outerjoin(
+        Application, (Job.id == Application.job_id) & (Application.user_id == user.id)
+    ).order_by(Job.date_posted.desc().nulls_last(), Job.id.desc()).all()
+
+    jobs_out = []
+    for job, app in results:
+        job_status = app.status if app else "NEW"
+        if status and job_status != status:
+            continue
+            
+        # Match score calculation
+        match_score = 0
+        if user_skills:
+            text_to_search = f"{job.title} {job.description}".lower() if job.description else (job.title or "").lower()
+            matches = sum(1 for skill in user_skills if skill in text_to_search)
+            max_skills_expected = min(len(user_skills), 15)
+            match_score = int(min((matches / max_skills_expected) * 100, 100)) if max_skills_expected > 0 else 0
+
+        jobs_out.append({
+            "id": job.id,
+            "title": job.title,
+            "company": job.company,
+            "location": job.location,
+            "url": job.source_url,
+            "source_platform": job.source,
+            "source_job_id": job.external_job_id,
+            "raw_description": job.description,
+            "cleaned_description": job.description,
+            "status": job_status,
+            "fit_score": match_score,
+            "fit_reason": f"Matches {matches} core skills from your profile" if match_score > 0 else None,
+            "created_at": str(job.date_posted) if job.date_posted else None
+        })
+
+    return jobs_out
+
+@router.post("/{job_id}/status")
+async def update_status(job_id: int, request: Request, status: Optional[str] = Form(None), db: Session = Depends(get_db)):
+    user = get_current_user(db)
+    
+    # Support both JSON payload and Form submission
+    if not status:
+        try:
+            body = await request.json()
+            status = body.get("status")
+        except Exception:
+            pass
+
+    if not status:
+        raise HTTPException(status_code=400, detail="Missing status")
+
     app = db.query(Application).filter(Application.job_id == job_id, Application.user_id == user.id).first()
     if not app:
         app = Application(job_id=job_id, user_id=user.id, status=status)
@@ -88,6 +155,12 @@ async def update_status(job_id: int, request: Request, status: str = Form(...), 
         app.status = status
         app.updated_at = datetime.datetime.now()
     db.commit()
+
+    content_type = request.headers.get("content-type", "")
+    accept = request.headers.get("accept", "")
+    if "application/json" in content_type or "application/json" in accept:
+        return {"status": "success", "job_id": job_id, "new_status": status}
+
     return RedirectResponse(url="/", status_code=303)
 
 

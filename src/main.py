@@ -7,9 +7,16 @@ from src.core.database import engine
 from src.models import Base
 from src.core.auth import verify_session_token, SESSION_COOKIE
 
+import os
+from fastapi.responses import RedirectResponse, FileResponse
+
 app = FastAPI(title=settings.PROJECT_NAME)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+FRONTEND_DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend/dist"))
+if os.path.exists(FRONTEND_DIST) and os.path.exists(os.path.join(FRONTEND_DIST, "assets")):
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
 
 # Auth middleware — redirect unauthenticated users to login
 PUBLIC_PATHS = {"/auth/login", "/auth/logout", "/health", "/openapi.json", "/docs", "/redoc"}
@@ -18,8 +25,8 @@ PUBLIC_PATHS = {"/auth/login", "/auth/logout", "/health", "/openapi.json", "/doc
 async def auth_middleware(request: Request, call_next):
     path = request.url.path
     
-    # Allow public paths and static files
-    if path.startswith("/static") or path in PUBLIC_PATHS or path.startswith("/docs"):
+    # Allow public paths, assets and static files
+    if path.startswith("/static") or path.startswith("/assets") or path in PUBLIC_PATHS or path.startswith("/docs"):
         return await call_next(request)
     
     # Check session cookie
@@ -44,6 +51,14 @@ app.include_router(resumes.router)
 app.include_router(applications.router)
 app.include_router(analytics.router)
 
+@app.get("/")
+async def root(request: Request):
+    index_file = os.path.join(FRONTEND_DIST, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+    return RedirectResponse(url="/legacy")
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+

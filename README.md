@@ -33,7 +33,7 @@ Jobflow is a high-performance Python application designed to act as your persona
 - **Database**: PostgreSQL / SQLite (via SQLAlchemy & Alembic)
 - **Scraping Engine**: Playwright + `browser-cookie3` (Native Integration) + BeautifulSoup4.
 - **AI Engine**: Google Gemini (v1beta API) using `gemini-3.5-flash` with robust fallback retry layers for rate limits (HTTP 429).
-- **Templating & UI**: Jinja2, TailwindCSS, FontAwesome.
+- **Templating & UI**: Modern React 19 + TypeScript SPA (Vite, Tailwind CSS v4, Lucide Icons) with legacy Jinja2 dashboard preserved on `/legacy`.
 - **PDF Generation**: WeasyPrint.
 
 ---

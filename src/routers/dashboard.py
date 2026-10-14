@@ -13,7 +13,7 @@ router = APIRouter(tags=["dashboard"])
 from fastapi.templating import Jinja2Templates
 templates = Jinja2Templates(directory="templates")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/legacy", response_class=HTMLResponse)
 async def dashboard(request: Request, status: str = "NEW", db: Session = Depends(get_db)):
     user = get_current_user(db)
     profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()

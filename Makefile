@@ -4,7 +4,7 @@
 all: build up
 
 # Build the application image
-build:
+build: frontend-build
 	podman build --network=host -t localhost/jobflow_app:latest .
 
 # Start containers in the background using podman-compose
